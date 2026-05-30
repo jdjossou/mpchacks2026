@@ -1,110 +1,26 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload,
   FileText,
-  Search,
-  Download,
-  RefreshCw,
   Shield,
   Cpu,
   Layers,
   AlertCircle,
   FileCheck,
-  Code,
-  Copy,
-  Check,
-  Eye,
-  ChevronDown,
-  ChevronRight,
-  Globe,
-  Sparkles,
-  ArrowRight,
-  Database
+  Globe
 } from 'lucide-react';
-import { parsePDFAction, parseImageAction, getLoadingMessagesAction, PDFParseResult } from '@/lib/parsing/actions';
-
-// Collapsible JSON Tree Node Component styled for Frutiger Aero
-function JsonTreeNode({ label, value, depth = 0 }: { label: string | number; value: any; depth?: number }) {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const isObject = value !== null && typeof value === 'object';
-
-  const toggleExpand = () => {
-    if (isObject) setIsExpanded(!isExpanded);
-  };
-
-  const getRenderedValue = (val: any) => {
-    if (typeof val === 'string') return <span className="text-emerald-600 font-semibold">"{val}"</span>;
-    if (typeof val === 'number') return <span className="text-sky-600 font-bold">{val}</span>;
-    if (typeof val === 'boolean') return <span className="text-indigo-600 font-bold">{val ? 'true' : 'false'}</span>;
-    if (val === null) return <span className="text-zinc-400">null</span>;
-    return null;
-  };
-
-  const indentStyle = { paddingLeft: `${depth * 16}px` };
-
-  if (!isObject) {
-    return (
-      <div style={indentStyle} className="flex py-1.5 text-xs font-mono border-b border-white/20 hover:bg-white/20 transition-colors">
-        <span className="text-sky-700 font-bold select-none mr-2">{label}:</span>
-        <span className="select-text break-words max-w-[70%] text-zinc-800">{getRenderedValue(value)}</span>
-      </div>
-    );
-  }
-
-  const isArray = Array.isArray(value);
-  const childKeys = Object.keys(value);
-
-  return (
-    <div className="text-xs font-mono">
-      <div
-        style={indentStyle}
-        onClick={toggleExpand}
-        className="flex items-center py-2 cursor-pointer hover:bg-white/30 border-b border-white/20 transition-colors select-none group"
-      >
-        <span className="text-sky-600 group-hover:text-sky-800 mr-1.5">
-          {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-        </span>
-        <span className="text-sky-800 font-extrabold mr-2">{label}:</span>
-        <span className="text-emerald-600 font-semibold bg-emerald-100/60 px-2 py-0.5 rounded-full border border-emerald-200/50 text-[10px]">
-          {isArray ? `Array[${value.length}]` : `Object{${childKeys.length}}`}
-        </span>
-      </div>
-
-      <AnimatePresence initial={false}>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-l-2 border-sky-300/40 ml-3"
-          >
-            {childKeys.map((key) => (
-              <JsonTreeNode
-                key={key}
-                label={isArray ? parseInt(key) : key}
-                value={value[key]}
-                depth={depth + 1}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+import { parsePDFAction, parseImageAction, getLoadingMessagesAction } from '@/lib/parsing/actions';
 
 export default function Home() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [isDragActive, setIsDragActive] = useState<boolean>(false);
   const [isParsing, setIsParsing] = useState<boolean>(false);
-  const [result, setResult] = useState<PDFParseResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'visual' | 'raw'>('visual');
-  const [copied, setCopied] = useState<boolean>(false);
-  const [chatInput, setChatInput] = useState<string>('');
   const [messages, setMessages] = useState<string[]>([]);
   const [currentMessage, setCurrentMessage] = useState<string>('AI Structuring in Progress');
 
@@ -205,7 +121,8 @@ export default function Home() {
       const response = isImg ? await parseImageAction(formData) : await parsePDFAction(formData);
 
       if (response.success && response.data) {
-        setResult(response.data);
+        console.log('Parsed document JSON:', response.data.json);
+        router.push('/game');
       } else {
         setError(response.error || `An error occurred while converting the ${isImg ? 'image' : 'PDF'}.`);
       }
@@ -217,34 +134,6 @@ export default function Home() {
         clearInterval(activeInterval);
       }
     }
-  };
-
-  const handleReset = () => {
-    setFile(null);
-    setResult(null);
-    setError(null);
-  };
-
-  // Copy Action
-  const handleCopy = () => {
-    if (!result) return;
-    navigator.clipboard.writeText(JSON.stringify(result.json, null, 2));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Download Action
-  const handleDownload = () => {
-    if (!result) return;
-    const blob = new Blob([JSON.stringify(result.json, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${result.name.replace(/\.[^/.]+$/, "")}_extracted.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -290,7 +179,7 @@ export default function Home() {
             <AnimatePresence mode="wait">
 
               {/* UPLOAD & INITIAL STATE */}
-              {!result && !isParsing && (
+              {!isParsing && (
                 <motion.div
                   key="uploader"
                   initial={{ opacity: 0, y: 15 }}
@@ -439,118 +328,19 @@ export default function Home() {
                 </motion.div>
               )}
 
-              {result && (
-                <motion.div
-                  key="results"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="w-full flex flex-col gap-6"
-                >
-                  {/* Dashboard Header Bar */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl glass-panel glass-reflection-container shadow-[0_12px_40px_rgba(2,132,199,0.08)]">
-                    <div className="glass-reflection-shine" />
-                    <div className="flex items-center gap-3 relative z-10">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-sky-400 to-sky-600 border border-sky-300 flex items-center justify-center shadow-md">
-                        <FileText className="h-6 w-6 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]" />
-                      </div>
-                      <div>
-                        <h3 className="font-black text-sky-950 truncate max-w-xs">{result.name}</h3>
-                        <p className="text-xs font-bold text-sky-700/80">
-                          {formatBytes(result.size)} • Structured
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0 relative z-10">
-                      <button
-                        onClick={handleCopy}
-                        className="flex items-center gap-2 px-5 py-3 glossy-button-silver glossy-shimmer font-bold text-sm cursor-pointer"
-                      >
-                        {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                        <span>{copied ? 'Copied!' : 'Copy'}</span>
-                      </button>
-                      <button
-                        onClick={handleDownload}
-                        className="flex items-center gap-2 px-5 py-3 glossy-button-green glossy-shimmer font-bold text-sm cursor-pointer"
-                      >
-                        <Download className="h-4 w-4" />
-                        <span>Download</span>
-                      </button>
-                      <button
-                        onClick={handleReset}
-                        className="flex items-center gap-2 px-5 py-3 glossy-button-silver glossy-shimmer font-bold text-sm cursor-pointer"
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Tabs Control */}
-                  <div className="flex border-b border-sky-200/50">
-                    <button
-                      onClick={() => setActiveTab('visual')}
-                      className={`flex items-center gap-2 px-6 py-4 text-sm font-bold border-b-3 transition-colors ${activeTab === 'visual'
-                        ? 'border-sky-500 text-sky-850'
-                        : 'border-transparent text-sky-700/60 hover:text-sky-850'
-                        }`}
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span>Visual Inspector</span>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('raw')}
-                      className={`flex items-center gap-2 px-6 py-4 text-sm font-bold border-b-3 transition-colors ${activeTab === 'raw'
-                        ? 'border-sky-500 text-sky-850'
-                        : 'border-transparent text-sky-700/60 hover:text-sky-850'
-                        }`}
-                    >
-                      <Code className="h-4 w-4" />
-                      <span>Raw JSON Code</span>
-                    </button>
-                  </div>
-
-                  {/* View Panel */}
-                  <div className="glass-panel glass-reflection-container p-6 min-h-[50vh] flex flex-col justify-between shadow-[0_12px_40px_rgba(2,132,199,0.08)]">
-                    <div className="glass-reflection-shine" />
-
-                    {activeTab === 'visual' ? (
-                      <div className="flex-1 space-y-2 max-h-[60vh] overflow-y-auto pr-2 relative z-10">
-                        {Object.keys(result.json).map((key) => (
-                          <JsonTreeNode
-                            key={key}
-                            label={key}
-                            value={result.json[key]}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex-1 font-mono text-xs leading-relaxed text-sky-950 whitespace-pre overflow-x-auto max-h-[60vh] overflow-y-auto pr-2 relative z-10 select-text selection:bg-sky-400 selection:text-white">
-                        {JSON.stringify(result.json, null, 2)}
-                      </div>
-                    )}
-
-                  </div>
-                </motion.div>
-              )}
-
             </AnimatePresence>
           </div>
 
-          {/* RIGHT HALF: 2 EMPTY GLOSSY AERO PANELS */}
-          <div className="flex flex-col gap-6 w-full h-full min-h-[500px]">
+          {/* RIGHT HALF: FLOATING MASCOT */}
+          <div className="flex flex-col w-full h-full min-h-[650px]">
 
-            {/* Div 1 */}
-            <div className="glass-panel glass-reflection-container p-6 flex-1 relative overflow-hidden">
-              <div className="glass-reflection-shine" />
-            </div>
-
-            {/* Div 2 */}
+            {/* Mascot */}
             <div className="flex-1 relative overflow-hidden flex items-center justify-center">
               <div className="relative z-10 flex items-center justify-center h-full w-full">
                 <motion.img
                   src="/characters/mascot.png"
                   alt="Mascot"
-                  className="max-h-full max-w-full object-contain select-none mix-blend-screen"
+                  className="max-h-full max-w-full object-contain scale-110 select-none mix-blend-screen"
                   style={{ mixBlendMode: 'screen' }}
                   animate={{
                     y: [0, -8, 0]
