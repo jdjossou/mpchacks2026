@@ -24,7 +24,7 @@ import {
   ArrowRight,
   Database
 } from 'lucide-react';
-import { parsePDFAction, parseImageAction, getLoadingMessagesAction, PDFParseResult } from './actions';
+import { parsePDFAction, parseImageAction, getLoadingMessagesAction, PDFParseResult } from '@/lib/parsing/actions';
 
 // Collapsible JSON Tree Node Component styled for Frutiger Aero
 function JsonTreeNode({ label, value, depth = 0 }: { label: string | number; value: any; depth?: number }) {
@@ -251,7 +251,7 @@ export default function Home() {
     <div
       className="min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white"
       style={{
-        backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)), url('/frutiger.jpg')",
+        backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)), url('/backgrounds/frutiger.jpg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -548,7 +548,7 @@ export default function Home() {
             <div className="flex-1 relative overflow-hidden flex items-center justify-center">
               <div className="relative z-10 flex items-center justify-center h-full w-full">
                 <motion.img
-                  src="/mascot.png"
+                  src="/characters/mascot.png"
                   alt="Mascot"
                   className="max-h-full max-w-full object-contain select-none mix-blend-screen"
                   style={{ mixBlendMode: 'screen' }}

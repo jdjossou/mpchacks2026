@@ -47,7 +47,7 @@ export async function parsePDFAction(formData: FormData): Promise<{ success: boo
     // 2. Load the system prompt from prompt.txt resource file
     const fs = require('fs');
     const path = require('path');
-    const promptPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'app', 'prompt.txt');
+    const promptPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'lib', 'parsing', 'prompt.txt');
     const systemPrompt = fs.readFileSync(promptPath, 'utf8');
 
     // 3. Call Gemini API to transform the text into structured JSON
@@ -198,7 +198,7 @@ export async function parseImageAction(formData: FormData): Promise<{ success: b
     // Load the system prompt from image_prompt.txt resource file
     const fs = require('fs');
     const path = require('path');
-    const promptPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'app', 'image_prompt.txt');
+    const promptPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'lib', 'parsing', 'image_prompt.txt');
     const systemPrompt = fs.readFileSync(promptPath, 'utf8');
 
     // Call Gemini API (multimodal) to transform the image into structured JSON
@@ -269,6 +269,8 @@ export async function getLoadingMessagesAction(): Promise<string[]> {
     const searchPaths = [
       path.join(/*turbopackIgnore: true*/ process.cwd(), 'loading_messages'),
       path.join(/*turbopackIgnore: true*/ process.cwd(), 'loading_messages.txt'),
+      path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'lib', 'parsing', 'loading_messages'),
+      path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'lib', 'parsing', 'loading_messages.txt'),
       path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'app', 'loading_messages'),
       path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'app', 'loading_messages.txt'),
     ];
