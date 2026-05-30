@@ -137,7 +137,7 @@ export default function ClassTrial({ game }: Props) {
   const activeStatement = game.debate.statements[state.activeStatementIndex];
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: "#050e1a" }}>
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{ backgroundImage: "url('/backgrounds/classroom.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}>
 
       {/* ── HUD row: topic name + timer ──────────────────────────────────── */}
       <div className="flex items-center justify-between px-3 pt-2 pb-1 shrink-0">

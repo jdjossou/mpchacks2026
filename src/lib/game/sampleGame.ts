@@ -19,13 +19,13 @@ export const sampleGame: GameConfig = {
       id: "studentA",
       name: "Mika",
       role: "student",
-      avatar: "/characters/student-a.png",
+      avatar: "/characters/studentA.png",
     },
     {
       id: "studentB",
       name: "Ren",
       role: "student",
-      avatar: "/characters/student-b.png",
+      avatar: "/characters/studentB.png",
     },
   ],
   intro: {
