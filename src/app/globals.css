@@ -1,26 +1,217 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f0f7ff;
+  --foreground: #0f172a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: 'Convection', 'Segoe UI', var(--font-geist-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Convection', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Frutiger Aero Design System */
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-top-color: rgba(255, 255, 255, 0.85);
+  border-left-color: rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 8px 32px 0 rgba(31, 38, 135, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+  border-radius: 1.25rem;
+}
+
+.glass-panel-dark {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  border-radius: 1.25rem;
+}
+
+/* Glossy reflections */
+.glass-reflection-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-reflection-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(255, 255, 255, 0.05) 90%,
+      transparent 100%);
+  pointer-events: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+/* Gel/Glossy Buttons (Sky Blue) */
+.glossy-button-blue {
+  position: relative;
+  background: linear-gradient(to bottom,
+      #38bdf8 0%,
+      #0284c7 48%,
+      #0369a1 52%,
+      #075985 100%);
+  border: 1px solid #0284c7;
+  border-top-color: #7dd3fc;
+  border-bottom-color: #0c4a6e;
+  border-radius: 9999px;
+  box-shadow:
+    0 4px 12px rgba(2, 132, 199, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.glossy-button-blue:hover {
+  background: linear-gradient(to bottom,
+      #7dd3fc 0%,
+      #0ea5e9 48%,
+      #0284c7 52%,
+      #0369a1 100%);
+  box-shadow:
+    0 6px 16px rgba(2, 132, 199, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+.glossy-button-blue:active {
+  background: linear-gradient(to bottom,
+      #0369a1 0%,
+      #075985 100%);
+  box-shadow:
+    0 2px 4px rgba(2, 132, 199, 0.2),
+    inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  transform: translateY(1px);
+}
+
+/* Gel/Glossy Buttons (Emerald Green) */
+.glossy-button-green {
+  position: relative;
+  background: linear-gradient(to bottom,
+      #34d399 0%,
+      #059669 48%,
+      #047857 52%,
+      #065f46 100%);
+  border: 1px solid #059669;
+  border-top-color: #a7f3d0;
+  border-bottom-color: #064e3b;
+  border-radius: 9999px;
+  box-shadow:
+    0 4px 12px rgba(5, 150, 105, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.glossy-button-green:hover {
+  background: linear-gradient(to bottom,
+      #6ee7b7 0%,
+      #10b981 48%,
+      #059669 52%,
+      #047857 100%);
+  box-shadow:
+    0 6px 16px rgba(5, 150, 105, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+/* Gel/Glossy Buttons (Zinc/Silver) */
+.glossy-button-silver {
+  position: relative;
+  background: linear-gradient(to bottom,
+      #f4f4f5 0%,
+      #d4d4d8 48%,
+      #a1a1aa 52%,
+      #71717a 100%);
+  border: 1px solid #a1a1aa;
+  border-top-color: #ffffff;
+  border-bottom-color: #52525b;
+  border-radius: 9999px;
+  box-shadow:
+    0 4px 12px rgba(161, 161, 170, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.1);
+  color: #27272a;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.glossy-button-silver:hover {
+  background: linear-gradient(to bottom,
+      #ffffff 0%,
+      #e4e4e7 48%,
+      #d4d4d8 52%,
+      #a1a1aa 100%);
+  box-shadow:
+    0 6px 16px rgba(161, 161, 170, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+/* Shimmer animation on buttons */
+.glossy-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.3) 30%,
+      rgba(255, 255, 255, 0) 100%);
+  transform: skewX(-25deg);
+  transition: 0.75s;
+  pointer-events: none;
+}
+
+.glossy-shimmer:hover::after {
+  left: 125%;
+}
+
+/* Aerodynamic scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #7dd3fc, #0284c7);
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #38bdf8, #0369a1);
 }
