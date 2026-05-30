@@ -1,12 +1,36 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useReducer, useEffect, useRef } from "react";
 
 interface TypewriterResult {
   displayed: string;
   done: boolean;
   /** Instantly reveal the full text */
   skip: () => void;
+}
+
+type TypewriterState = {
+  displayed: string;
+  done: boolean;
+};
+
+type TypewriterAction =
+  | { type: "reset"; hasText: boolean }
+  | { type: "display"; value: string }
+  | { type: "complete"; value: string };
+
+function typewriterReducer(
+  state: TypewriterState,
+  action: TypewriterAction
+): TypewriterState {
+  switch (action.type) {
+    case "reset":
+      return { displayed: "", done: !action.hasText };
+    case "display":
+      return { ...state, displayed: action.value };
+    case "complete":
+      return { displayed: action.value, done: true };
+  }
 }
 
 /**
@@ -19,41 +43,44 @@ export function useTypewriter(
   opts: { speed?: number; onDone?: () => void } = {}
 ): TypewriterResult {
   const { speed = 28, onDone } = opts;
-  const [displayed, setDisplayed] = useState("");
-  const [done, setDone]           = useState(false);
+  const [state, dispatch] = useReducer(typewriterReducer, {
+    displayed: "",
+    done: false,
+  });
   const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  }, [onDone]);
 
   // Reset whenever the text changes
   useEffect(() => {
-    setDisplayed("");
-    setDone(false);
+    dispatch({ type: "reset", hasText: !!text });
 
     if (!text) {
-      setDone(true);
       return;
     }
 
     let index = 0;
     const id = setInterval(() => {
       index++;
-      setDisplayed(text.slice(0, index));
+      const nextDisplayed = text.slice(0, index);
       if (index >= text.length) {
         clearInterval(id);
-        setDone(true);
+        dispatch({ type: "complete", value: nextDisplayed });
         onDoneRef.current?.();
+        return;
       }
+      dispatch({ type: "display", value: nextDisplayed });
     }, speed);
 
     return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, speed]);
 
   const skip = () => {
-    setDisplayed(text);
-    setDone(true);
+    dispatch({ type: "complete", value: text });
     onDoneRef.current?.();
   };
 
-  return { displayed, done, skip };
+  return { displayed: state.displayed, done: state.done, skip };
 }

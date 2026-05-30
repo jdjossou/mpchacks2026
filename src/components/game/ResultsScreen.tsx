@@ -153,7 +153,7 @@ export default function ResultsScreen({
                 </p>
                 {target && (
                   <p className="text-white/60 text-[0.65rem] italic">
-                    Corrects: "{target.text.slice(0, 60)}…"
+                    {`Corrects: "${target.text.slice(0, 60)}..."`}
                   </p>
                 )}
                 <p className="text-white/80 mt-0.5">{bullet.explanation}</p>

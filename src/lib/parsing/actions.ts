@@ -1,10 +1,49 @@
 'use server'
 
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { PDFParse } from 'pdf-parse';
+
+const PARSING_DIR = path.join(
+  /*turbopackIgnore: true*/ process.cwd(),
+  'src',
+  'lib',
+  'parsing'
+);
+const PDF_PROMPT_PATH = path.join(PARSING_DIR, 'prompt.txt');
+const IMAGE_PROMPT_PATH = path.join(PARSING_DIR, 'image_prompt.txt');
+const LOADING_MESSAGES_PATH = path.join(PARSING_DIR, 'loading_messages.txt');
+
 export interface PDFParseResult {
-  json: any; // The structured JSON content extracted by Gemini
+  json: unknown; // The structured JSON content extracted by Gemini
   version: string;
   size: number;
   name: string;
+}
+
+type GeminiGenerateContentResponse = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+};
+
+function getErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
+
+async function readGeminiText(response: Response): Promise<string> {
+  const responseData = (await response.json()) as GeminiGenerateContentResponse;
+  const text = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!text) {
+    throw new Error('No content returned from Gemini API.');
+  }
+
+  return text;
 }
 
 export async function parsePDFAction(formData: FormData): Promise<{ success: boolean; data?: PDFParseResult; error?: string }> {
@@ -35,7 +74,6 @@ export async function parsePDFAction(formData: FormData): Promise<{ success: boo
     const buffer = Buffer.from(arrayBuffer);
 
     // 1. Extract raw text from PDF
-    const { PDFParse } = require('pdf-parse');
     const parser = new PDFParse({ data: buffer });
     const parsed = await parser.getText();
     const rawText = parsed.text || '';
@@ -45,10 +83,7 @@ export async function parsePDFAction(formData: FormData): Promise<{ success: boo
     }
 
     // 2. Load the system prompt from prompt.txt resource file
-    const fs = require('fs');
-    const path = require('path');
-    const promptPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'lib', 'parsing', 'prompt.txt');
-    const systemPrompt = fs.readFileSync(promptPath, 'utf8');
+    const systemPrompt = readFileSync(PDF_PROMPT_PATH, 'utf8');
 
     // 3. Call Gemini API to transform the text into structured JSON
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -78,12 +113,7 @@ ${rawText}`
       throw new Error(`Gemini API returned status ${response.status}: ${errorText}`);
     }
 
-    const responseData = await response.json();
-    const rawJsonString = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!rawJsonString) {
-      throw new Error('No content returned from Gemini API.');
-    }
+    const rawJsonString = await readGeminiText(response);
 
     // Parse the JSON string from Gemini
     const structuredJson = JSON.parse(rawJsonString);
@@ -97,16 +127,16 @@ ${rawText}`
         name: file.name,
       },
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('PDF parsing/Gemini error:', err);
     return {
       success: false,
-      error: err.message || 'Failed to parse and transform PDF file.',
+      error: getErrorMessage(err, 'Failed to parse and transform PDF file.'),
     };
   }
 }
 
-export async function queryDocumentAction(jsonData: any, query: string): Promise<{ success: boolean; answer?: string; error?: string }> {
+export async function queryDocumentAction(jsonData: unknown, query: string): Promise<{ success: boolean; answer?: string; error?: string }> {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -144,22 +174,17 @@ Answer the user's question accurately and concisely based on the JSON document d
       throw new Error(`Gemini API returned status ${response.status}: ${errorText}`);
     }
 
-    const responseData = await response.json();
-    const answer = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!answer) {
-      throw new Error('No answer returned from Gemini.');
-    }
+    const answer = await readGeminiText(response);
 
     return {
       success: true,
       answer,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Query error:', err);
     return {
       success: false,
-      error: err.message || 'Failed to query the document.',
+      error: getErrorMessage(err, 'Failed to query the document.'),
     };
   }
 }
@@ -196,10 +221,7 @@ export async function parseImageAction(formData: FormData): Promise<{ success: b
     const mimeType = file.type || 'image/jpeg';
 
     // Load the system prompt from image_prompt.txt resource file
-    const fs = require('fs');
-    const path = require('path');
-    const promptPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'lib', 'parsing', 'image_prompt.txt');
-    const systemPrompt = fs.readFileSync(promptPath, 'utf8');
+    const systemPrompt = readFileSync(IMAGE_PROMPT_PATH, 'utf8');
 
     // Call Gemini API (multimodal) to transform the image into structured JSON
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -234,12 +256,7 @@ export async function parseImageAction(formData: FormData): Promise<{ success: b
       throw new Error(`Gemini API returned status ${response.status}: ${errorText}`);
     }
 
-    const responseData = await response.json();
-    const rawJsonString = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!rawJsonString) {
-      throw new Error('No content returned from Gemini API.');
-    }
+    const rawJsonString = await readGeminiText(response);
 
     // Parse the JSON string from Gemini
     const structuredJson = JSON.parse(rawJsonString);
@@ -253,31 +270,24 @@ export async function parseImageAction(formData: FormData): Promise<{ success: b
         name: file.name,
       },
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Image parsing/Gemini error:', err);
     return {
       success: false,
-      error: err.message || 'Failed to parse and transform image file.',
+      error: getErrorMessage(err, 'Failed to parse and transform image file.'),
     };
   }
 }
 
 export async function getLoadingMessagesAction(): Promise<string[]> {
   try {
-    const fs = require('fs');
-    const path = require('path');
     const searchPaths = [
-      path.join(/*turbopackIgnore: true*/ process.cwd(), 'loading_messages'),
-      path.join(/*turbopackIgnore: true*/ process.cwd(), 'loading_messages.txt'),
-      path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'lib', 'parsing', 'loading_messages'),
-      path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'lib', 'parsing', 'loading_messages.txt'),
-      path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'app', 'loading_messages'),
-      path.join(/*turbopackIgnore: true*/ process.cwd(), 'src', 'app', 'loading_messages.txt'),
+      LOADING_MESSAGES_PATH,
     ];
 
     for (const filePath of searchPaths) {
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf8');
+      if (existsSync(filePath)) {
+        const content = readFileSync(filePath, 'utf8');
         const lines = content.split(/\r?\n/).map((l: string) => l.trim()).filter(Boolean);
         if (lines.length > 0) {
           return lines;
@@ -297,6 +307,3 @@ export async function getLoadingMessagesAction(): Promise<string[]> {
     'Organizing structured data into clean JSON grids...'
   ];
 }
-
-
-

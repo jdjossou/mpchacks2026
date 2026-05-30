@@ -1,6 +1,5 @@
-import { sampleGame } from "@/lib/game/sampleGame";
 import ComputerFrame from "@/components/game/ComputerFrame";
-import ClassTrial    from "@/components/game/ClassTrial";
+import GameFromSession from "@/components/game/GameFromSession";
 
 export const metadata = {
   title: "Class Trial — EduTrial",
@@ -13,7 +12,7 @@ export const metadata = {
 export default function GamePage() {
   return (
     <ComputerFrame>
-      <ClassTrial game={sampleGame} />
+      <GameFromSession />
     </ComputerFrame>
   );
 }

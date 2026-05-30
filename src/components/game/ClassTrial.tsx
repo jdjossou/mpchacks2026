@@ -40,7 +40,7 @@ export default function ClassTrial({ game }: Props) {
   );
 
   // Stable dispatch wrapper (avoids stale reference in effects)
-  const dispatch = useCallback(dispatchRaw, [dispatchRaw]);
+  const dispatch = useCallback((action: Action) => dispatchRaw(action), [dispatchRaw]);
 
   // ── Timer: only runs while timerRunning is true ───────────────────────
   useEffect(() => {

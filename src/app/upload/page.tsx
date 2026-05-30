@@ -14,6 +14,7 @@ import {
   Globe
 } from 'lucide-react';
 import { parsePDFAction, parseImageAction, getLoadingMessagesAction } from '@/lib/parsing/actions';
+import { GENERATED_GAME_STORAGE_KEY } from '@/lib/game/generatedGame';
 
 export default function Home() {
   const router = useRouter();
@@ -122,12 +123,13 @@ export default function Home() {
 
       if (response.success && response.data) {
         console.log('Parsed document JSON:', response.data.json);
+        sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(response.data));
         router.push('/game');
       } else {
         setError(response.error || `An error occurred while converting the ${isImg ? 'image' : 'PDF'}.`);
       }
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
       setIsParsing(false);
       if (activeInterval) {

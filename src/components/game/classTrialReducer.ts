@@ -1,6 +1,6 @@
 import type { GameConfig, DialogueLine } from "@/lib/game/gameTypes";
 import { tutorialScript } from "@/lib/game/tutorialScript";
-import { isWon, solvedCount } from "@/lib/game/selectors";
+import { isWon } from "@/lib/game/selectors";
 import { SCORE_HIT, SCORE_MISS_PEN } from "@/lib/game/scoring";
 
 // ─── Phase ────────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ export type Action =
   | { type: "RESET" };
 
 // ─── Initial state factory ─────────────────────────────────────────────────
-export function makeInitialState(config: GameConfig): GameState {
+export function makeInitialState(): GameState {
   return {
     phase: "boot",
     dialogueScript: [],
@@ -301,7 +301,7 @@ export function classTrialReducer(
 
     // ── Reset to initial state ────────────────────────────────────────────
     case "RESET":
-      return makeInitialState(config);
+      return makeInitialState();
 
     default:
       return state;
