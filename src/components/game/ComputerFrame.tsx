@@ -21,8 +21,12 @@ export default function ComputerFrame({ children }: Props) {
 
         {/* Inner screen recess — definite size so content can never stretch the bezel */}
         <div className="crt-screen">
-          {/* Content lives here */}
-          <div className="relative w-full h-full flex flex-col overflow-hidden">
+          {/* Content lives here — inherit the screen's rounded corners so the
+              background is clipped here (robust even with transformed children). */}
+          <div
+            className="relative w-full h-full flex flex-col overflow-hidden"
+            style={{ borderRadius: "inherit" }}
+          >
             {children}
           </div>
 

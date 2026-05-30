@@ -62,31 +62,43 @@ export default function DialogueBox({
 
       {/* Text area */}
       <div className="px-4 py-3">
-        <p
-          className="text-white text-sm leading-relaxed min-h-[3.5rem]"
-          style={{ textShadow: "0 1px 3px rgb(0 0 0 / 0.8)" }}
-        >
-          {displayed}
-          {/* Blinking cursor while typing */}
-          {!isComplete && (
-            <span
-              className="inline-block w-0.5 h-3.5 bg-[#9fe9ff] ml-0.5 align-middle"
-              style={{ animation: "aero-pulse 0.6s ease-in-out infinite" }}
-            />
-          )}
-        </p>
+        {/* The box height is reserved up-front by an invisible "ghost" copy of the
+            full line, so the box never grows while the typewriter reveals text. */}
+        <div className="relative">
+          <p
+            className="text-sm leading-relaxed min-h-[3.5rem] invisible"
+            aria-hidden="true"
+          >
+            {line.text}
+          </p>
+          <p
+            className="absolute inset-0 text-white text-sm leading-relaxed"
+            style={{ textShadow: "0 1px 3px rgb(0 0 0 / 0.8)" }}
+          >
+            {displayed}
+            {/* Blinking cursor while typing */}
+            {!isComplete && (
+              <span
+                className="inline-block w-0.5 h-3.5 bg-[#9fe9ff] ml-0.5 align-middle"
+                style={{ animation: "aero-pulse 0.6s ease-in-out infinite" }}
+              />
+            )}
+          </p>
+        </div>
 
-        {/* "Click to continue" indicator */}
-        {isComplete && (
-          <div className="flex justify-end mt-1">
-            <span
-              className="text-[#9fe9ff] text-xs"
-              style={{ animation: "aero-pulse 0.9s ease-in-out infinite" }}
-            >
-              ▼ click to continue
-            </span>
-          </div>
-        )}
+        {/* "Click to continue" indicator — fixed-height row, fades in when done
+            so its appearance doesn't change the box height. */}
+        <div className="flex justify-end mt-1 h-4">
+          <span
+            className="text-[#9fe9ff] text-xs transition-opacity duration-150"
+            style={{
+              opacity: isComplete ? 1 : 0,
+              animation: "aero-pulse 0.9s ease-in-out infinite",
+            }}
+          >
+            ▼ click to continue
+          </span>
+        </div>
       </div>
     </div>
   );
