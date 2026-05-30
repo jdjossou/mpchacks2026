@@ -1,1 +1,38 @@
-You are an expert document parser. Analyze the following document text and extract all relevant information, metadata, headers, tables, key entities, and action items. Create bulletpoints that summarsize the whole document. Extract the topic of the discussion and name it topic. After, generate a a short sentece a teacher would say with this format: Today we will review (topic you extracted) (hook to motivate the students) and name it into. Then generate a single one to two sentence long statement for each bulletpoint. After, take 40% of the statements and change a word or a part of a sentence to make it false. Select only 2 true statements and 2 false statements and name the true statements statement-correct-1 and statement-correct-2 and the two faalse statements statement-wrong-1 and statement-wrong-2 Save the original parts you modified for the two false statements you selected and name them answer-correct-1 for the statement-wrong-1 modified section's original part and answer-correct-2 for the statement-wrong-1 modified section's original part.Generate 2 other words or parts of sentences you could slot in where you modified the true statement, these words and sentence parts are also false. Name them answer-wrong-1 and answer-wrong-2. Generate a conclusion a teacher would give for said lesson with this format: Great work one more thing to remember is (explanation of two correct statements you didn't select). Name it conclusion. Organise all the statements with this format: topic,intro, statement-wrong-1, statement-wrong-2, statement-correct-1, statement-correct-2, answer-correct-1, answer-correct-2, answer-wrong-1, answer-wrong-2, conclusion. Transform it into a clean, highly structured, logical JSON object. Return ONLY the JSON object. Do not wrap the JSON in markdown code blocks or add any descriptions.
+You are an expert document parser and educational content generator. Analyze the provided document text at the end of this prompt and execute the following tasks precisely.
+
+### Task Steps:
+1. **Extract Topic**: Identify the core topic of the document. 
+2. **Generate Intro**: Create a short sentence a teacher would say using this exact template: "Today we will review [topic] [hook to motivate the students]".
+3. **Summarize**: Create a list of bullet points summarizing the document. Convert each bullet point into a single, standalone 1-sentence statement.
+4. **Modify for Distractors**: Take exactly 50% of those statements and alter 1 to 4 words in each to make them factually incorrect based on the text.
+5. **Select Final Statements**:
+   - Select 2 correct statements. Name them "statement-correct-1" and "statement-correct-2".
+   - Select 2 modified incorrect statements. Name them "statement-wrong-1" and "statement-wrong-2".
+6. **Create Correct Answer Keys**: 
+   - Isolate the original, unaltered word(s) from "statement-wrong-1". Name this "answer-correct-1".
+   - Isolate the original, unaltered word(s) from "statement-wrong-2". Name this "answer-correct-2".
+7. **Create Incorrect Distractors**: Generate 2 entirely new phrase options (1 to 4 words each) that *could* logically fit into any of the statements to make them wrong, but are completely fabricated. Name them "answer-wrong-1" and "answer-wrong-2".
+8. **Generate Conclusion**: Create a teacher's closing statement using this exact template: "Great work! One more thing to remember is [explanation of two correct statements you generated in Step 3 but did NOT select for the final JSON]".
+
+### Output Format:
+Generate a clean, highly structured JSON object using the exact keys outlined below. 
+
+CRITICAL: Return ONLY the raw JSON object. Do not wrap the JSON in markdown code blocks (do not use ```json) and do not include any conversational introductions, conclusions, or notes.
+
+### Target JSON Schema:
+{
+  "topic": "extracted topic",
+  "intro": "Today we will review...",
+  "statement-wrong-1": "modified incorrect statement 1",
+  "statement-wrong-2": "modified incorrect statement 2",
+  "statement-correct-1": "selected correct statement 1",
+  "statement-correct-2": "selected correct statement 2",
+  "answer-correct-1": "original words changed in statement-wrong-1",
+  "answer-correct-2": "original words changed in statement-wrong-2",
+  "answer-wrong-1": "new distractor phrase 1",
+  "answer-wrong-2": "new distractor phrase 2",
+  "conclusion": "Great work! One more thing to remember is..."
+}
+
+### Document Text to Analyze:
+[INSERT YOUR DOCUMENT TEXT HERE]
