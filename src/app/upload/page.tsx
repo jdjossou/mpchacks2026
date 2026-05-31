@@ -12,16 +12,6 @@ import { GENERATED_GAME_STORAGE_KEY } from '@/lib/game/generatedGame';
 import { playSound } from '@/lib/sound';
 import { playMusic } from '@/lib/music';
 
-const GOOFY_GREETINGS = [
-  "FEED ME FILES! I consume knowledge and spit out gaming! 👁️👄👁️",
-  "Goooood day! Ready to crash some learning? Let's go! 💥📚",
-  "Beep boop! If you drop a level .clashroom, I promise not to eat it... mostly. 🤖",
-  "I'm Mizue! I'm here to review your papers and judge your decisions! 📐🏫",
-  "Got a PDF? A text file? A JPEG of your homework? Chuck it in!",
-  "Oops! Did you click me? That tickles! 😆✨",
-  "Don't worry, the grade I give you is only 90% based on my mood! 👩‍🏫"
-];
-
 export default function Home() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -33,7 +23,6 @@ export default function Home() {
   const [showSecret, setShowSecret] = useState<boolean>(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hasLoadedGame, setHasLoadedGame] = useState<boolean>(false);
-  const [speechIndex, setSpeechIndex] = useState<number>(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,13 +45,7 @@ export default function Home() {
     }
   }, []);
 
-  // Auto-cycle mascot speech bubbles
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length);
-    }, 10000);
-    return () => clearInterval(timer);
-  }, []);
+
 
   /* File size formatter (unused but preserved)
   const formatBytes = (bytes: number, decimals = 2) => {
@@ -264,9 +247,7 @@ export default function Home() {
         backgroundAttachment: 'fixed'
       }}
     >
-      {/* Floating Glass Bubbles for Aero Vibe */}
-      <div className="absolute top-[15%] right-[20%] w-32 h-32 rounded-full bg-white/20 border border-white/40 shadow-[inset_-10px_-10px_20px_rgba(255,255,255,0.2),_0_10px_20px_rgba(0,0,0,0.05)] pointer-events-none backdrop-blur-[2px] z-0" />
-      <div className="absolute bottom-[25%] left-[10%] w-24 h-24 rounded-full bg-white/25 border border-white/50 shadow-[inset_-8px_-8px_15px_rgba(255,255,255,0.25),_0_8px_15px_rgba(0,0,0,0.05)] pointer-events-none backdrop-blur-[1px] z-0" />
+
 
 
 
@@ -428,14 +409,14 @@ export default function Home() {
             </AnimatePresence>
           </div>
 
-          {/* RIGHT HALF: TEACHER WITH FLOATING MASCOT AND SPEECH BUBBLE OVER MASCOT */}
+          {/* RIGHT HALF: TEACHER WITH FLOATING MASCOT */}
           <div className="flex flex-col w-full h-full min-h-[500px] items-center justify-end relative pb-4">
 
             {/* Glowing background aura */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-sky-400/15 blur-3xl pointer-events-none animate-pulse z-0" />
 
-            {/* Characters Container (holds teacher and floating mascot with text bubble over mascot) */}
-            <div className="relative w-full max-w-md flex items-end justify-center z-10">
+            {/* Characters Container (holds teacher and floating mascot, shifted slightly lower and to the right) */}
+            <div className="relative w-full max-w-md flex items-end justify-center z-10 translate-x-6 md:translate-x-12 translate-y-6 md:translate-y-10">
 
               {/* Teacher (Big Size, centered, breathing animation) */}
               <motion.img
@@ -449,12 +430,11 @@ export default function Home() {
                   duration: 6,
                   ease: "easeInOut"
                 }}
-                className="h-[360px] md:h-[450px] w-auto object-contain select-none cursor-pointer filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.3)] transition-all duration-300"
+                className="h-[360px] md:h-[450px] w-auto object-contain select-none filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.3)] transition-all duration-300"
                 whileHover={{ scale: 1.02 }}
-                onClick={() => setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length)}
               />
 
-              {/* Floating Mascot & Speech Bubble */}
+              {/* Floating Mascot */}
               <motion.div
                 animate={{
                   y: [0, -15, 0],
@@ -465,28 +445,8 @@ export default function Home() {
                   duration: 4,
                   ease: "easeInOut"
                 }}
-                className="absolute top-[-90px] md:top-[-110px] right-[-25px] md:right-[-45px] z-20 cursor-pointer flex flex-col items-center gap-1"
-                onClick={() => setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length)}
+                className="absolute top-[30px] md:top-[40px] right-[-20px] md:right-[-35px] z-20 flex flex-col items-center gap-1"
               >
-                {/* Speech Bubble */}
-                <div className="h-32 flex items-end justify-center relative mb-1">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={speechIndex}
-                      initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, y: -10 }}
-                      transition={{ type: "spring", stiffness: 250, damping: 18 }}
-                      className="bg-white/25 border border-white/45 shadow-[0_8px_32px_rgba(0,0,0,0.15)] backdrop-blur-md px-4 py-3 rounded-2xl max-w-[200px] md:max-w-[240px] text-center text-xs font-semibold text-slate-100 flex flex-col items-center gap-1 cursor-pointer select-none transition-all hover:bg-white/35 hover:border-white/55 relative"
-                    >
-                      <p className="leading-relaxed">&ldquo;{GOOFY_GREETINGS[speechIndex]}&rdquo;</p>
-                      <span className="text-[9px] uppercase font-bold text-sky-200 mt-1 tracking-wider animate-pulse">Click to poke us 👈</span>
-                      {/* Speech bubble arrow pointing down */}
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white/30" />
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-
                 {/* Mascot Image */}
                 <motion.img
                   src="/characters/mascot.png"
