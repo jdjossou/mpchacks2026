@@ -11,12 +11,12 @@ interface Props {
 // Emoji fallback + animation timing per character (real art slots into `character.avatar`).
 const CHARACTER_STYLE: Record<
   CharacterId,
-  { emoji: string; bob: number; shake: number }
+  { emoji: string; bob: number; shake: number; scale: number; yOffset: string }
 > = {
-  teacher:  { emoji: "👩‍🏫", bob: 2.1, shake: 5.2 },
-  studentA: { emoji: "🧑‍💻", bob: 1.7, shake: 3.8 },
-  studentB: { emoji: "🧑‍🎓", bob: 1.9, shake: 4.6 },
-  mascot:   { emoji: "📚", bob: 1.6, shake: 4.1 },
+  teacher:  { emoji: "👩‍🏫", bob: 2.1, shake: 5.2, scale: 1.1, yOffset: "18vh" },
+  studentA: { emoji: "🧑‍💻", bob: 1.7, shake: 3.8, scale: 1, yOffset: "0" },
+  studentB: { emoji: "🧑‍🎓", bob: 1.9, shake: 4.6, scale: 1, yOffset: "0" },
+  mascot:   { emoji: "📚", bob: 1.6, shake: 4.1, scale: 1, yOffset: "0" },
 };
 
 /**
@@ -77,6 +77,8 @@ function StageAvatar({ character }: { character: Character }) {
             width: "auto",
             objectFit: "contain",
             filter: "drop-shadow(0 8px 18px rgb(0 0 0 / 0.45))",
+            transform: `translateY(${style.yOffset}) scale(${style.scale})`,
+            transformOrigin: "bottom center",
           }}
           onError={(e) => {
             // Fall back to the emoji if the art file doesn't exist yet.
