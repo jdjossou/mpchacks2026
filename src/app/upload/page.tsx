@@ -21,11 +21,9 @@ export default function Home() {
   const [showSecret, setShowSecret] = useState<boolean>(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  const [loadedViaJson, setLoadedViaJson] = useState<boolean>(false);
-  const [loadedViaUpload, setLoadedViaUpload] = useState<boolean>(false);
+  const [hasLoadedGame, setHasLoadedGame] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const jsonInputRef = useRef<HTMLInputElement>(null);
 
   // Load loading messages on mount
   useEffect(() => {
@@ -35,19 +33,7 @@ export default function Home() {
 
     const saved = sessionStorage.getItem(GENERATED_GAME_STORAGE_KEY);
     if (saved) {
-      try {
-        const gameData = JSON.parse(saved);
-        const name = gameData?.name || '';
-        if (name) {
-          if (name.toLowerCase().endsWith('.json')) {
-            setLoadedViaJson(true);
-          } else {
-            setLoadedViaUpload(true);
-          }
-        }
-      } catch {
-        // Ignore
-      }
+      setHasLoadedGame(true);
     }
   }, []);
 
@@ -79,13 +65,13 @@ export default function Home() {
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
-      validateAndSetFile(droppedFile);
+      handleFileSelection(droppedFile);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      validateAndSetFile(e.target.files[0]);
+      handleFileSelection(e.target.files[0]);
     }
   };
 
@@ -93,14 +79,28 @@ export default function Home() {
     fileInputRef.current?.click();
   };
 
-  const handleJsonFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleJsonParse(e.target.files[0]);
+  const handleFileSelection = (selectedFile: File) => {
+    setError(null);
+    if (selectedFile.size > 15 * 1024 * 1024) {
+      setError('File size must be under 15MB.');
+      return;
     }
-  };
 
-  const handleLoadLevelClick = () => {
-    jsonInputRef.current?.click();
+    setFile(selectedFile);
+
+    const nameLower = selectedFile.name.toLowerCase();
+    const isJson = selectedFile.type === 'application/json' || nameLower.endsWith('.json');
+    const isPdf = selectedFile.type === 'application/pdf' || nameLower.endsWith('.pdf');
+    const isImg = selectedFile.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(nameLower);
+    const isTxt = selectedFile.type === 'text/plain' || nameLower.endsWith('.txt');
+
+    if (isJson) {
+      handleJsonParse(selectedFile);
+    } else if (isPdf || isImg || isTxt) {
+      handleParse(selectedFile);
+    } else {
+      setError('Only PDF, TXT, JSON level files, and supported images (PNG, JPG, WEBP) are supported.');
+    }
   };
 
   const handleJsonParse = async (selectedFile: File) => {
@@ -148,30 +148,12 @@ export default function Home() {
       };
 
       sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
-      setLoadedViaJson(true);
-      setLoadedViaUpload(false);
+      setHasLoadedGame(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to parse JSON level file.');
     } finally {
       setIsParsing(false);
     }
-  };
-
-  const validateAndSetFile = (selectedFile: File) => {
-    setError(null);
-    const isPdf = selectedFile.type === 'application/pdf' || selectedFile.name.toLowerCase().endsWith('.pdf');
-    const isImg = selectedFile.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(selectedFile.name);
-    const isTxt = selectedFile.type === 'text/plain' || selectedFile.name.toLowerCase().endsWith('.txt');
-    if (!isPdf && !isImg && !isTxt) {
-      setError('Only PDF files, TXT files, and supported images (PNG, JPG, WEBP) are supported.');
-      return;
-    }
-    if (selectedFile.size > 15 * 1024 * 1024) {
-      setError('File size must be under 15MB.');
-      return;
-    }
-    setFile(selectedFile);
-    handleParse(selectedFile);
   };
 
   // Parsing trigger calling Gemini Action
@@ -221,8 +203,7 @@ export default function Home() {
       if (response.success && response.data) {
         console.log('Parsed document JSON:', response.data.json);
         sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(response.data));
-        setLoadedViaUpload(true);
-        setLoadedViaJson(false);
+        setHasLoadedGame(true);
       } else {
         const fileTypeLabel = isImg ? 'image' : isTxt ? 'TXT' : 'PDF';
         setError(response.error || `An error occurred while converting the ${fileTypeLabel}.`);
@@ -239,6 +220,10 @@ export default function Home() {
 
   return (
     <div
+      onDragEnter={handleDrag}
+      onDragOver={handleDrag}
+      onDragLeave={handleDrag}
+      onDrop={handleDrop}
       className="min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white"
       style={{
         backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)), url('/backgrounds/frutiger.jpg')",
@@ -301,26 +286,22 @@ export default function Home() {
                     <div className="flex flex-col gap-5 items-start justify-center h-[340px] w-full">
                       {[
                         { name: 'Browse Levels' },
-                        { name: loadedViaJson ? 'Play' : 'Load Level' },
-                        { name: loadedViaUpload ? 'Play' : 'Upload file' },
+                        { name: hasLoadedGame ? 'Play' : 'Upload Level' },
                         { name: 'Settings' },
                       ].map((item, index) => {
-                        const baseX = (2.828 - Math.pow(Math.abs(2 - index), 1.5)) * 18;
-                        const baseRotate = (index - 2) * 6.0;
+                        const baseX = (2.0 - Math.pow(Math.abs(1 - index), 1.5)) * 18;
+                        const baseRotate = (index - 1) * 6.0;
                         const isPlay = item.name === 'Play';
-                        const isUpload = item.name === 'Upload file';
-                        const isLoadLevel = item.name === 'Load Level';
-                        const isActive = isPlay || isUpload || isLoadLevel;
+                        const isUpload = item.name === 'Upload Level';
+                        const isActive = isPlay || isUpload;
 
                         return (
                           <motion.button
-                            key={index === 1 ? 'load-play' : (index === 2 ? 'upload-play' : item.name)}
+                            key={index === 1 ? 'upload-play' : item.name}
                             onClick={
                               index === 1 
-                                ? (loadedViaJson ? () => router.push('/game') : handleLoadLevelClick)
-                                : (index === 2 
-                                  ? (loadedViaUpload ? () => router.push('/game') : handleUploadClick)
-                                  : undefined)
+                                ? (hasLoadedGame ? () => router.push('/game') : handleUploadClick)
+                                : undefined
                             }
                             onMouseEnter={() => setHoveredIndex(index)}
                             onMouseLeave={() => setHoveredIndex(null)}
@@ -355,14 +336,7 @@ export default function Home() {
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    accept="application/pdf,image/*,text/plain,.txt"
-                    className="hidden"
-                  />
-                  <input
-                    type="file"
-                    ref={jsonInputRef}
-                    onChange={handleJsonFileChange}
-                    accept="application/json,.json"
+                    accept="application/pdf,image/*,text/plain,.txt,application/json,.json"
                     className="hidden"
                   />
                 </motion.div>
@@ -404,7 +378,9 @@ export default function Home() {
                       </AnimatePresence>
                     </div>
                     <p className="text-xs font-semibold text-sky-200 max-w-xs mx-auto mt-2">
-                      Mizue Sensei is rewieving &ldquo;{file?.name}&rdquo;...
+                      {file?.name?.toLowerCase().endsWith('.json')
+                        ? `Mizue Sensei is parsing level data from "${file?.name}"...`
+                        : `Mizue Sensei is reviewing "${file?.name}"...`}
                     </p>
                   </div>
                 </motion.div>
