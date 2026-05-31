@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, Fragment } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -43,7 +43,9 @@ export default function Home() {
 
     const saved = sessionStorage.getItem(GENERATED_GAME_STORAGE_KEY);
     if (saved) {
-      setHasLoadedGame(true);
+      setTimeout(() => {
+        setHasLoadedGame(true);
+      }, 0);
     }
   }, []);
 
@@ -55,7 +57,7 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  // File size formatter
+  /* File size formatter (unused but preserved)
   const formatBytes = (bytes: number, decimals = 2) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -64,6 +66,7 @@ export default function Home() {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   };
+  */
 
   // Drag handlers
   const handleDrag = (e: React.DragEvent) => {
@@ -242,7 +245,9 @@ export default function Home() {
       onDragOver={handleDrag}
       onDragLeave={handleDrag}
       onDrop={handleDrop}
-      className="min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white"
+      className={`min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white transition-all duration-300 ${
+        isDragActive ? 'brightness-110 contrast-95 ring-8 ring-sky-400/50 ring-inset' : ''
+      }`}
       style={{
         backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)), url('/backgrounds/frutiger.jpg')",
         backgroundSize: 'cover',
@@ -338,7 +343,7 @@ export default function Home() {
                               WebkitTextStroke: '1px black',
                               transformOrigin: 'left center'
                             }}
-                            className={`text-left font-black tracking-wide relative text-3xl md:text-4xl ${isActive
+                            className={`text-left font-black tracking-wide relative text-4xl md:text-5xl ${isActive
                                 ? 'text-white cursor-pointer hover:text-sky-300'
                                 : 'text-white cursor-default'
                               }`}
@@ -407,54 +412,77 @@ export default function Home() {
             </AnimatePresence>
           </div>
 
-          {/* RIGHT HALF: FLOATING MASCOT WITH SPEECH BUBBLE */}
-          <div className="flex flex-col w-full h-full min-h-[500px] items-center justify-center relative">
+          {/* RIGHT HALF: TEACHER WITH FLOATING MASCOT AND SPEECH BUBBLE OVER MASCOT */}
+          <div className="flex flex-col w-full h-full min-h-[500px] items-center justify-end relative pb-4">
             
             {/* Glowing background aura */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-sky-400/20 blur-3xl pointer-events-none animate-pulse z-0" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-sky-400/15 blur-3xl pointer-events-none animate-pulse z-0" />
 
-            <motion.div
-              animate={{
-                y: [0, -12, 0]
-              }}
-              transition={{
-                repeat: Infinity,
-                duration: 4,
-                ease: "easeInOut"
-              }}
-              className="relative flex flex-col items-center gap-6 z-10"
-            >
-              {/* Speech Bubble */}
-              <div className="h-36 flex items-end justify-center relative">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={speechIndex}
-                    initial={{ opacity: 0, scale: 0.8, y: 15 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.8, y: -15 }}
-                    transition={{ type: "spring", stiffness: 250, damping: 18 }}
-                    className="bg-white/20 border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.15)] backdrop-blur-md px-6 py-4 rounded-2xl max-w-[280px] text-center text-sm font-semibold text-slate-100 flex flex-col items-center gap-1 cursor-pointer select-none transition-all hover:bg-white/30 hover:border-white/50 relative"
-                    onClick={() => setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length)}
-                  >
-                    <p className="leading-relaxed">&ldquo;{GOOFY_GREETINGS[speechIndex]}&rdquo;</p>
-                    <span className="text-[10px] uppercase font-bold text-sky-200 mt-2 tracking-wider animate-pulse">Click to poke me 👈</span>
-                    {/* Speech bubble arrow pointing down */}
-                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white/30" />
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              {/* Mascot */}
+            {/* Characters Container (holds teacher and floating mascot with text bubble over mascot) */}
+            <div className="relative w-full max-w-md flex items-end justify-center z-10">
+              
+              {/* Teacher (Big Size, centered, breathing animation) */}
               <motion.img
-                src="/characters/mascot.png"
-                alt="Mascot"
-                className="h-64 w-64 md:h-72 md:w-72 object-contain select-none mix-blend-screen cursor-pointer filter drop-shadow-[0_10px_20px_rgba(56,189,248,0.2)]"
-                style={{ mixBlendMode: 'screen' }}
-                whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
-                whileTap={{ scale: 0.9 }}
+                src="/characters/teacher.png"
+                alt="Teacher (Mizue Sensei)"
+                animate={{
+                  y: [0, -6, 0]
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 6,
+                  ease: "easeInOut"
+                }}
+                className="h-[360px] md:h-[450px] w-auto object-contain select-none cursor-pointer filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.3)] transition-all duration-300"
+                whileHover={{ scale: 1.02 }}
                 onClick={() => setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length)}
               />
-            </motion.div>
+
+              {/* Floating Mascot & Speech Bubble */}
+              <motion.div
+                animate={{
+                  y: [0, -15, 0],
+                  rotate: [0, 2, -2, 0]
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 4,
+                  ease: "easeInOut"
+                }}
+                className="absolute top-[-90px] md:top-[-110px] right-[-25px] md:right-[-45px] z-20 cursor-pointer flex flex-col items-center gap-1"
+                onClick={() => setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length)}
+              >
+                {/* Speech Bubble */}
+                <div className="h-32 flex items-end justify-center relative mb-1">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={speechIndex}
+                      initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                      transition={{ type: "spring", stiffness: 250, damping: 18 }}
+                      className="bg-white/25 border border-white/45 shadow-[0_8px_32px_rgba(0,0,0,0.15)] backdrop-blur-md px-4 py-3 rounded-2xl max-w-[200px] md:max-w-[240px] text-center text-xs font-semibold text-slate-100 flex flex-col items-center gap-1 cursor-pointer select-none transition-all hover:bg-white/35 hover:border-white/55 relative"
+                    >
+                      <p className="leading-relaxed">&ldquo;{GOOFY_GREETINGS[speechIndex]}&rdquo;</p>
+                      <span className="text-[9px] uppercase font-bold text-sky-200 mt-1 tracking-wider animate-pulse">Click to poke us 👈</span>
+                      {/* Speech bubble arrow pointing down */}
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white/30" />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                {/* Mascot Image */}
+                <motion.img
+                  src="/characters/mascot.png"
+                  alt="Mascot"
+                  className="h-28 w-28 md:h-36 md:w-36 object-contain select-none mix-blend-screen filter drop-shadow-[0_8px_16px_rgba(56,189,248,0.3)]"
+                  style={{ mixBlendMode: 'screen' }}
+                  whileHover={{ scale: 1.15, rotate: [0, -5, 5, 0] }}
+                  whileTap={{ scale: 0.9 }}
+                />
+              </motion.div>
+
+            </div>
 
           </div>
 
