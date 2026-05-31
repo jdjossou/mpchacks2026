@@ -5,10 +5,8 @@ import { SCORE_HIT, SCORE_MISS_PEN } from "@/lib/game/scoring";
 
 // ─── Phase ────────────────────────────────────────────────────────────────
 export type Phase =
-  | "boot"             // CRT power-on animation
   | "intro"            // teacher: data-driven topic intro
   | "tutorial"         // mascot: hard-coded mechanics explanation
-  | "answerPreview"    // player reads the 3 truth bullets before the debate
   | "solving"          // interactive: a student speaks a statement, timer running
   | "winConclusion"    // teacher conclusion line after win
   | "results";         // success/fail summary screen
@@ -51,7 +49,6 @@ export type GameState = {
 
 // ─── Actions ──────────────────────────────────────────────────────────────
 export type Action =
-  | { type: "BOOT_DONE" }
   | { type: "ADVANCE_DIALOGUE" }
   | { type: "LINE_TYPED" }
   | { type: "SKIP_LINE" }
@@ -69,8 +66,8 @@ export type Action =
 // ─── Initial state factory ─────────────────────────────────────────────────
 export function makeInitialState(): GameState {
   return {
-    phase: "boot",
-    dialogueScript: [],
+    phase: "tutorial",
+    dialogueScript: tutorialScript,
     dialogueIndex: 0,
     isLineComplete: false,
     activeStatementIndex: 0,
@@ -123,16 +120,6 @@ export function classTrialReducer(
 ): GameState {
   switch (action.type) {
 
-    // ── boot → tutorial ───────────────────────────────────────────────────
-    case "BOOT_DONE":
-      return {
-        ...state,
-        phase: "tutorial",
-        dialogueScript: tutorialScript,
-        dialogueIndex: 0,
-        isLineComplete: false,
-      };
-
     // ── Typewriter completed the current line ──────────────────────────────
     case "LINE_TYPED":
       return { ...state, isLineComplete: true };
@@ -161,15 +148,9 @@ export function classTrialReducer(
         };
       }
 
-      // End of intro → show the truth-bullet preview (no dialogue script)
+      // End of intro → start the debate
       if (state.phase === "intro") {
-        return {
-          ...state,
-          phase: "answerPreview",
-          dialogueScript: [],
-          dialogueIndex: 0,
-          isLineComplete: false,
-        };
+        return classTrialReducer(state, { type: "START_SOLVING" }, config);
       }
 
       // End of winConclusion → results (success)

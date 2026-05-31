@@ -12,12 +12,10 @@ import {
 import { playSound } from "@/lib/sound";
 import { playMusic, stopMusic, type MusicName } from "@/lib/music";
 
-import BootScreen        from "./BootScreen";
 import CharacterStage    from "./CharacterStage";
 import DialogueBox       from "./DialogueBox";
 import TrialTimer        from "./TrialTimer";
 import BulletInventory   from "./BulletInventory";
-import AnswerPreview     from "./AnswerPreview";
 import FloatingStatement from "./FloatingStatement";
 import ResultsScreen     from "./ResultsScreen";
 
@@ -151,12 +149,6 @@ export default function ClassTrial({ game }: Props) {
   // ─── Phase → screen ────────────────────────────────────────────────────
   const { phase } = state;
 
-  if (phase === "boot") {
-    return (
-      <BootScreen onDone={() => dispatch({ type: "BOOT_DONE" })} />
-    );
-  }
-
   if (phase === "results") {
     return (
       <ResultsScreen
@@ -166,15 +158,6 @@ export default function ClassTrial({ game }: Props) {
         timeLeft={state.timeLeft}
         resolvedStatements={state.resolvedStatements}
         onReset={() => dispatch({ type: "RESET" })}
-      />
-    );
-  }
-
-  if (phase === "answerPreview") {
-    return (
-      <AnswerPreview
-        bullets={game.debate.answers}
-        onStart={() => dispatch({ type: "START_SOLVING" })}
       />
     );
   }
