@@ -52,7 +52,7 @@ function requireParsedDocumentJson(value: unknown): ParsedDocumentGameJson {
   return candidate as ParsedDocumentGameJson;
 }
 
-function slugify(value: string): string {
+export function slugify(value: string): string {
   const slug = value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")

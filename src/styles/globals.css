@@ -607,3 +607,71 @@ body {
   0%,2%,4%,100% { opacity: 1; }
   1%,3%         { opacity: 0.4; }
 }
+
+/* ─── Results: Arcade Leaderboard ────────────────────────────────────────── */
+
+/* Glossy chrome header bar — sits atop the leaderboard / scorecard panels. */
+.arcade-chrome-bar {
+  background: linear-gradient(
+    to bottom,
+    #f4faff 0%,
+    #b9d8ee 45%,
+    #6f9dc4 52%,
+    #9cc2e0 100%
+  );
+  border: 1px solid rgb(255 255 255 / 0.7);
+  border-radius: 0.6rem;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    inset 0 -2px 4px rgb(0 0 0 / 0.2),
+    0 2px 6px rgb(0 0 0 / 0.35);
+  color: #0b2a3a;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.6);
+}
+
+/* Circular rank medal — glossy gel with a neon ring. */
+.arcade-rank-medal {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, rgb(255 255 255 / 0.9), transparent 55%),
+    linear-gradient(160deg, var(--medal-from, #a8e4ff), var(--medal-to, #2e90d8));
+  border: 2px solid rgb(255 255 255 / 0.85);
+  box-shadow:
+    inset 0 2px 4px rgb(255 255 255 / 0.8),
+    inset 0 -3px 8px rgb(0 0 0 / 0.25),
+    0 0 0 3px var(--medal-ring, rgb(87 199 255 / 0.5)),
+    0 0 22px var(--medal-glow, rgb(87 199 255 / 0.65)),
+    0 6px 18px rgb(0 0 0 / 0.4);
+}
+
+/* A single leaderboard breakdown row — alternating tint set inline. */
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+
+/* Solid, high-contrast backing for the bullet-explanation cards. */
+.arcade-explain-card {
+  background: linear-gradient(160deg, rgb(8 28 56 / 0.92), rgb(6 20 42 / 0.92));
+  border: 1px solid rgb(126 195 255 / 0.4);
+  border-radius: 0.6rem;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.18),
+    0 4px 14px rgb(0 0 0 / 0.45);
+}
+
+/* Pulsing neon glow for the big score readout. */
+@keyframes arcade-score-glow {
+  0%, 100% { filter: drop-shadow(0 0 8px currentColor); }
+  50%      { filter: drop-shadow(0 0 18px currentColor); }
+}
