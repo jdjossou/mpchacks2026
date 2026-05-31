@@ -7,7 +7,7 @@ import { SCORE_HIT, SCORE_MISS_PEN } from "@/lib/game/scoring";
 export type Phase =
   | "boot"             // CRT power-on animation
   | "intro"            // teacher: data-driven topic intro
-  | "tutorial"         // teacher: hard-coded mechanics explanation
+  | "tutorial"         // mascot: hard-coded mechanics explanation
   | "answerPreview"    // player reads the 3 truth bullets before the debate
   | "solving"          // interactive: a student speaks a statement, timer running
   | "winConclusion"    // teacher conclusion line after win
@@ -123,12 +123,12 @@ export function classTrialReducer(
 ): GameState {
   switch (action.type) {
 
-    // ── boot → intro ──────────────────────────────────────────────────────
+    // ── boot → tutorial ───────────────────────────────────────────────────
     case "BOOT_DONE":
       return {
         ...state,
-        phase: "intro",
-        dialogueScript: [config.intro],
+        phase: "tutorial",
+        dialogueScript: tutorialScript,
         dialogueIndex: 0,
         isLineComplete: false,
       };
@@ -150,19 +150,19 @@ export function classTrialReducer(
         return { ...state, dialogueIndex: nextIndex, isLineComplete: false };
       }
 
-      // End of intro → load tutorial
-      if (state.phase === "intro") {
+      // End of tutorial → load the topic intro
+      if (state.phase === "tutorial") {
         return {
           ...state,
-          phase: "tutorial",
-          dialogueScript: tutorialScript,
+          phase: "intro",
+          dialogueScript: [config.intro],
           dialogueIndex: 0,
           isLineComplete: false,
         };
       }
 
-      // End of tutorial → show the truth-bullet preview (no dialogue script)
-      if (state.phase === "tutorial") {
+      // End of intro → show the truth-bullet preview (no dialogue script)
+      if (state.phase === "intro") {
         return {
           ...state,
           phase: "answerPreview",
@@ -180,13 +180,13 @@ export function classTrialReducer(
       return state;
     }
 
-    // ── Skip the tutorial → jump straight to the truth-bullet preview ──────
+    // ── Skip the tutorial → continue to the topic intro ───────────────────
     case "SKIP_TUTORIAL":
       if (state.phase !== "tutorial") return state;
       return {
         ...state,
-        phase: "answerPreview",
-        dialogueScript: [],
+        phase: "intro",
+        dialogueScript: [config.intro],
         dialogueIndex: 0,
         isLineComplete: false,
       };

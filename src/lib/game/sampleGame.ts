@@ -16,6 +16,12 @@ export const sampleGame: GameConfig = {
       avatar: "/characters/teacher.png",
     },
     {
+      id: "mascot",
+      name: "TUTO-SAN",
+      role: "mascot",
+      avatar: "/characters/mascot.png",
+    },
+    {
       id: "studentA",
       name: "Mika",
       role: "student",

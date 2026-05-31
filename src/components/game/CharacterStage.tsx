@@ -16,6 +16,7 @@ const CHARACTER_STYLE: Record<
   teacher:  { emoji: "👩‍🏫", bob: 2.1, shake: 5.2 },
   studentA: { emoji: "🧑‍💻", bob: 1.7, shake: 3.8 },
   studentB: { emoji: "🧑‍🎓", bob: 1.9, shake: 4.6 },
+  mascot:   { emoji: "📚", bob: 1.6, shake: 4.1 },
 };
 
 /**

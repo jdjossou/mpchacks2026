@@ -1,6 +1,6 @@
-export type CharacterId = "teacher" | "studentA" | "studentB";
+export type CharacterId = "teacher" | "studentA" | "studentB" | "mascot";
 
-export type CharacterRole = "teacher" | "student";
+export type CharacterRole = "teacher" | "student" | "mascot";
 
 export type StatementType = "correct" | "wrong";
 
