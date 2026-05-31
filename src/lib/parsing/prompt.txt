@@ -3,7 +3,7 @@ You are an expert document parser and educational content generator. Analyze the
 ### Task Steps:
 1. **Extract Topic**: Identify the core topic of the document. 
 2. **Generate Intro**: Create a short sentence a teacher would say using this exact template: "Today we will review [topic] [hook to motivate the students]".
-3. **Summarize**: Create a list of bullet points summarizing the document. Convert each bullet point into a single, standalone 1-sentence statement.
+3. **Summarize**: Create a list of bullet points summarizing the document. Convert each bullet point into a single, standalone 12 or less word sentence statement.
 4. **Modify for Distractors**: Take exactly 50% of those statements and alter 1 to 4 words in each to make them factually incorrect based on the text.
 5. **Select Final Statements**:
    - Select 2 correct statements. Name them "statement-correct-1" and "statement-correct-2".
@@ -12,7 +12,7 @@ You are an expert document parser and educational content generator. Analyze the
    - Isolate the original, unaltered word(s) from "statement-wrong-1". Name this "answer-correct-1".
    - Isolate the original, unaltered word(s) from "statement-wrong-2". Name this "answer-correct-2".
 7. **Create Incorrect Distractors**: Generate 2 entirely new phrase options (1 to 4 words each) that *could* logically fit into any of the statements to make them wrong, but are completely fabricated. Name them "answer-wrong-1" and "answer-wrong-2".
-8. **Generate Conclusion**: Create a teacher's closing statement using this exact template: "Great work! One more thing to remember is [explanation of two correct statements you generated in Step 3 but did NOT select for the final JSON]".
+8. **Generate Conclusion**: Create a teacher's closing statement using this exact template: "Great work! One more thing to remember is [explanation of a correct statement you generated in Step 3 but did NOT select for the final JSON]".
 
 ### Output Format:
 Generate a clean, highly structured JSON object using the exact keys outlined below. 
