@@ -238,15 +238,20 @@ export default function Home() {
       onDragOver={handleDrag}
       onDragLeave={handleDrag}
       onDrop={handleDrop}
-      className={`min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white transition-all duration-300 ${isDragActive ? 'brightness-110 contrast-95 ring-8 ring-sky-400/50 ring-inset' : ''
+      className={`min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white transition-all duration-300 bg-gradient-to-b from-aero-cyan to-aero-aqua ${isDragActive ? 'brightness-110 contrast-95 ring-8 ring-sky-400/50 ring-inset' : ''
         }`}
-      style={{
-        backgroundImage: "linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0)), url('/backgrounds/frutiger.jpg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
     >
+      {/* Dynamic Background Image Layer */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/backgrounds/frutiger.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-auto lg:h-full lg:w-full object-contain lg:object-cover object-left-top lg:object-left"
+          draggable={false}
+        />
+      </div>
 
 
 
