@@ -7,6 +7,7 @@ import type { GameConfig } from "@/lib/game/gameTypes";
 import { finalScore, SCORE_BASE, SCORE_HIT, SCORE_TIME_BONUS } from "@/lib/game/scoring";
 import { solvedCount } from "@/lib/game/selectors";
 import { slugify } from "@/lib/game/generatedGame";
+import { shareLevelAction } from "@/lib/game/sharedLevelActions";
 import { playSound } from "@/lib/sound";
 
 interface Props {
@@ -35,6 +36,14 @@ export default function ResultsScreen({
   const medal = MEDAL[grade];
 
   const scoreColor = isWin ? "#7ee787" : "#ffd07a";
+  const [shareState, setShareState] = useState<"idle" | "sharing" | "shared" | "exists" | "error">("idle");
+  const shareLabel = {
+    idle: "Share",
+    sharing: "Sharing...",
+    shared: "Shared",
+    exists: "Already Shared",
+    error: "Try Again",
+  }[shareState];
 
   // Export the full game definition as a .clashroom file (JSON under the hood).
   function handleDownload() {
@@ -51,6 +60,21 @@ export default function ResultsScreen({
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+  }
+
+  async function handleShare() {
+    if (shareState === "sharing") return;
+
+    playSound("menu_select");
+    setShareState("sharing");
+
+    const response = await shareLevelAction(config);
+    if (!response.success) {
+      setShareState("error");
+      return;
+    }
+
+    setShareState(response.status === "created" ? "shared" : "exists");
   }
 
   return (
@@ -230,14 +254,16 @@ export default function ResultsScreen({
         </motion.button>
         <motion.button
           type="button"
-          className="glossy-button-silver glossy-shimmer inline-flex items-center gap-2 px-8 py-2.5 text-base font-bold tracking-wide rounded-full"
+          className="glossy-button-silver glossy-shimmer inline-flex min-w-[8.5rem] items-center justify-center gap-2 px-8 py-2.5 text-base font-bold tracking-wide rounded-full disabled:cursor-wait disabled:opacity-75"
           aria-label="Share result"
-          onClick={() => {}}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.97 }}
+          aria-live="polite"
+          disabled={shareState === "sharing"}
+          onClick={handleShare}
+          whileHover={shareState === "sharing" ? undefined : { scale: 1.05 }}
+          whileTap={shareState === "sharing" ? undefined : { scale: 0.97 }}
         >
           <Share2 aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
-          Share
+          {shareLabel}
         </motion.button>
       </motion.div>
 

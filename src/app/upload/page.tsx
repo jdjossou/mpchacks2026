@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useSyncExternalStore } from 'react';
+import { useState, useRef, useEffect, useSyncExternalStore, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -21,6 +21,8 @@ import {
   gameConfigFromParsedDocument,
   type GeneratedGameStoragePayload,
 } from '@/lib/game/generatedGame';
+import { listSharedLevelsAction } from '@/lib/game/sharedLevelActions';
+import type { SharedLevelSummary } from '@/lib/game/sharedLevelTypes';
 import { playSound } from '@/lib/sound';
 import { playMusic } from '@/lib/music';
 import { isMuted, toggleMuted, subscribe } from '@/lib/audioSettings';
@@ -29,8 +31,6 @@ import {
   toggleVoiceActing,
   subscribe as subscribeToVoiceActing,
 } from '@/lib/voiceActingSettings';
-import { PREMADE_LEVELS } from '@/lib/game/premadeLevels';
-import type { GameConfig } from '@/lib/game/gameTypes';
 
 function getDialogueText(value: unknown): string | null {
   if (typeof value === 'string') return value;
@@ -56,6 +56,10 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filePickerRequest, setFilePickerRequest] = useState<number>(0);
   const [fileInputResetRequest, setFileInputResetRequest] = useState<number>(0);
+  const [sharedLevels, setSharedLevels] = useState<SharedLevelSummary[]>([]);
+  const [isLoadingSharedLevels, setIsLoadingSharedLevels] = useState<boolean>(false);
+  const [sharedLevelsError, setSharedLevelsError] = useState<string | null>(null);
+  const [loadingDescription, setLoadingDescription] = useState<string | null>(null);
   const muted = useSyncExternalStore(subscribe, isMuted, () => false);
   const voiceActingEnabled = useSyncExternalStore(
     subscribeToVoiceActing,
@@ -63,21 +67,28 @@ export default function Home() {
     () => true
   );
 
-  const handleSelectPremadeLevel = (level: GameConfig) => {
-    playSound('menu_select');
-    const responseData = {
-      json: level,
-      version: 'premade',
-      size: 0,
-      name: `${level.title}.clashroom`,
-    };
-    sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
-    localStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
-    setHasLoadedGame(true);
-    router.push('/game');
-  };
-
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadSharedLevels = useCallback(async () => {
+    setIsLoadingSharedLevels(true);
+    setSharedLevelsError(null);
+
+    try {
+      const response = await listSharedLevelsAction();
+      if (!response.success) {
+        setSharedLevels([]);
+        setSharedLevelsError(response.error);
+        return;
+      }
+
+      setSharedLevels(response.data);
+    } catch (err) {
+      setSharedLevels([]);
+      setSharedLevelsError(err instanceof Error ? err.message : 'Failed to load shared levels.');
+    } finally {
+      setIsLoadingSharedLevels(false);
+    }
+  }, []);
 
   const addTeacherVoiceovers = async (
     payload: GeneratedGameStoragePayload
@@ -144,7 +155,23 @@ export default function Home() {
         setHasLoadedGame(true);
       }, 0);
     }
-  }, []);
+
+    const timer = window.setTimeout(() => {
+      loadSharedLevels();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [loadSharedLevels]);
+
+  useEffect(() => {
+    if (menuView !== 'browse') return;
+
+    const timer = window.setTimeout(() => {
+      loadSharedLevels();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [loadSharedLevels, menuView]);
 
   useEffect(() => {
     if (filePickerRequest === 0) return;
@@ -205,6 +232,7 @@ export default function Home() {
 
   const handleFileSelection = (selectedFile: File) => {
     setError(null);
+    setLoadingDescription(null);
     if (selectedFile.size > 15 * 1024 * 1024) {
       setError('File size must be under 15MB.');
       return;
@@ -240,6 +268,7 @@ export default function Home() {
 
     setIsParsing(true);
     setHasLoadedGame(false);
+    setLoadingDescription(null);
     sessionStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
     localStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
     setCurrentMessage('Loading level data...');
@@ -297,6 +326,7 @@ export default function Home() {
     setIsParsing(true);
     setError(null);
     setHasLoadedGame(false);
+    setLoadingDescription(null);
     sessionStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
     localStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
 
@@ -357,6 +387,46 @@ export default function Home() {
       if (activeInterval) {
         clearInterval(activeInterval);
       }
+    }
+  };
+
+  const handleSelectSharedLevel = async (level: SharedLevelSummary) => {
+    playSound('menu_select');
+    setError(null);
+    setHasLoadedGame(false);
+    sessionStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
+    localStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
+
+    const responseData: GeneratedGameStoragePayload = {
+      json: level.gameConfig,
+      version: 'shared',
+      size: 0,
+      name: `${level.title}.clashroom`,
+    };
+
+    if (!voiceActingEnabled) {
+      sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
+      localStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
+      setHasLoadedGame(true);
+      router.push('/game');
+      return;
+    }
+
+    setIsParsing(true);
+    setLoadingDescription(`Mizue Sensei is loading "${level.title}"...`);
+    setCurrentMessage('Loading shared level...');
+
+    try {
+      const enrichedResponseData = await addTeacherVoiceovers(responseData);
+      sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(enrichedResponseData));
+      localStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(enrichedResponseData));
+      setHasLoadedGame(true);
+      router.push('/game');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load shared level.');
+    } finally {
+      setIsParsing(false);
+      setLoadingDescription(null);
     }
   };
 
@@ -450,10 +520,10 @@ export default function Home() {
   ];
   const mid = (menuItems.length - 1) / 2;
 
-  const filteredLevels = PREMADE_LEVELS.filter(level =>
+  const filteredLevels = sharedLevels.filter(level =>
     level.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    level.topic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    level.topic.summary.toLowerCase().includes(searchQuery.toLowerCase())
+    level.topicName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    level.topicSummary.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -549,24 +619,45 @@ export default function Home() {
 
                         {/* Level cards list */}
                         <div className="flex-1 overflow-y-auto pr-3 space-y-3 scrollbar-thin scrollbar-thumb-sky-500/50 scrollbar-track-transparent">
-                          {filteredLevels.length > 0 ? (
+                          {isLoadingSharedLevels ? (
+                            <div className="text-center py-10 text-sm text-slate-300 font-semibold bg-white/5 border border-white/10 rounded-2xl">
+                              Loading shared levels...
+                            </div>
+                          ) : sharedLevelsError ? (
+                            <div className="space-y-3 text-center py-8 px-4 text-sm text-red-200 font-semibold bg-red-500/10 border border-red-400/20 rounded-2xl">
+                              <p>{sharedLevelsError}</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playSound('menu_select');
+                                  loadSharedLevels();
+                                }}
+                                className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-black text-white transition-all hover:bg-white/20"
+                              >
+                                Try Again
+                              </button>
+                            </div>
+                          ) : filteredLevels.length > 0 ? (
                             filteredLevels.map((level) => (
                               <motion.div
                                 key={level.id}
                                 whileHover={{ scale: 1.02, x: 4 }}
                                 whileTap={{ scale: 0.98 }}
-                                onClick={() => handleSelectPremadeLevel(level)}
+                                onClick={() => handleSelectSharedLevel(level)}
                                 onMouseEnter={() => playSound('menu_hover')}
                                 className="glass-panel p-4 shadow-md border border-white/25 hover:border-white/45 rounded-2xl relative overflow-hidden bg-white/10 hover:bg-white/15 cursor-pointer flex flex-col justify-between transition-all group"
                               >
                                 <div className="flex justify-between items-start gap-2">
                                   <div className="space-y-0.5">
                                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-200 group-hover:text-sky-300 transition-colors">
-                                      {level.topic.name}
+                                      {level.topicName}
                                     </span>
                                     <h4 className="font-extrabold text-base text-white text-shadow-sm group-hover:text-sky-100 transition-colors">
                                       {level.title}
                                     </h4>
+                                    <p className="line-clamp-2 text-xs font-semibold leading-relaxed text-slate-200/80">
+                                      {level.topicSummary}
+                                    </p>
                                   </div>
                                 </div>
 
@@ -580,7 +671,9 @@ export default function Home() {
                             ))
                           ) : (
                             <div className="text-center py-10 text-sm text-slate-300 font-semibold bg-white/5 border border-white/10 rounded-2xl">
-                              No levels found matching &ldquo;{searchQuery}&rdquo;
+                              {searchQuery
+                                ? `No levels found matching "${searchQuery}"`
+                                : 'No shared levels found yet.'}
                             </div>
                           )}
                         </div>
@@ -688,9 +781,9 @@ export default function Home() {
                       </AnimatePresence>
                     </div>
                     <p className="text-xs font-semibold text-sky-200 max-w-xs mx-auto mt-2">
-                      {file?.name?.toLowerCase().endsWith('.clashroom')
+                      {loadingDescription ?? (file?.name?.toLowerCase().endsWith('.clashroom')
                         ? `Mizue Sensei is parsing level data from "${file?.name}"...`
-                        : `Mizue Sensei is reviewing "${file?.name}"...`}
+                        : `Mizue Sensei is reviewing "${file?.name}"...`)}
                     </p>
                   </div>
                 </motion.div>
