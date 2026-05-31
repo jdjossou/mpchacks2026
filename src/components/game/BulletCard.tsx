@@ -1,56 +1,54 @@
 "use client";
 
-import { motion } from "framer-motion";
 import type { AnswerBullet } from "@/lib/game/gameTypes";
 
 interface Props {
   bullet: AnswerBullet;
-  isSelected: boolean;
-  isUsed: boolean;
-  onClick: () => void;
+  /** Visual role in the carousel — the centre card is the live, highlighted one. */
+  slot: "center" | "side";
+  /** Spent bullet (only ever seen briefly during its exit animation). */
+  isUsed?: boolean;
 }
 
 /**
- * One "Truth Bullet" chip in the player's inventory.
+ * Presentational Truth Bullet card. No interaction lives here — the carousel
+ * ([BulletInventory]) handles positioning, navigation, and drag. The card just
+ * renders the aero look for its slot.
  */
-export default function BulletChip({ bullet, isSelected, isUsed, onClick }: Props) {
+export default function BulletCard({ bullet, slot, isUsed = false }: Props) {
+  const isCenter = slot === "center";
+
   return (
-    <motion.button
-      layout
-      whileHover={isUsed ? {} : { scale: 1.03 }}
-      whileTap={isUsed ? {} : { scale: 0.96 }}
-      onClick={isUsed ? undefined : onClick}
+    <div
       className={[
         "aero-button",
-        isSelected ? "aero-button-selected" : "",
-        isUsed ? "opacity-35 cursor-not-allowed grayscale" : "",
-        "relative flex items-center gap-2 pl-3 pr-4 py-3 text-left w-full",
+        isCenter ? "aero-button-selected" : "",
+        isUsed ? "opacity-35 grayscale" : "",
+        "relative flex items-center gap-3 pl-4 pr-5 py-4 text-left w-full h-full select-none",
       ]
         .filter(Boolean)
         .join(" ")}
-      title={isUsed ? "Used" : bullet.text}
-      disabled={isUsed}
-      aria-pressed={isSelected}
+      title={bullet.text}
     >
       {/* Bullet icon — fixed-width slot so text alignment never shifts. */}
       <span
-        className="shrink-0 w-5 text-center text-lg leading-none"
+        className="shrink-0 w-6 text-center text-2xl leading-none"
         aria-hidden="true"
         style={
-          isSelected && !isUsed
+          isCenter && !isUsed
             ? { color: "#0c5a26", textShadow: "0 0 8px rgb(126 231 135 / 0.95)" }
             : undefined
         }
       >
-        {isUsed ? "✕" : isSelected ? "◆" : "◇"}
+        {isUsed ? "✕" : isCenter ? "◆" : "◇"}
       </span>
 
       {/* Truncated text */}
       <span
-        className="text-base font-semibold leading-snug block overflow-hidden"
+        className="text-lg font-semibold leading-snug block overflow-hidden"
         style={{
           display: "-webkit-box",
-          WebkitLineClamp: 2,
+          WebkitLineClamp: 3,
           WebkitBoxOrient: "vertical",
           textShadow: "0 1px 2px rgb(0 0 0 / 0.3)",
         }}
@@ -66,6 +64,6 @@ export default function BulletChip({ bullet, isSelected, isUsed, onClick }: Prop
           </span>
         </div>
       )}
-    </motion.button>
+    </div>
   );
 }
