@@ -24,6 +24,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
   const [currentMessage, setCurrentMessage] = useState<string>('AI Structuring in Progress');
+  const [showSecret, setShowSecret] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -104,7 +105,7 @@ export default function Home() {
       activeInterval = setInterval(() => {
         setCurrentMessage((prev) => {
           const filtered = messages.filter((m) => m !== prev);
-          const nextMsg = filtered.length > 0 
+          const nextMsg = filtered.length > 0
             ? filtered[Math.floor(Math.random() * filtered.length)]
             : prev;
           return nextMsg;
@@ -365,6 +366,48 @@ export default function Home() {
       <footer className="border-t border-white/10 py-6 px-6 text-center text-xs font-bold text-sky-200/50 z-10 bg-black/20 backdrop-blur-md">
         <p>© {new Date().getFullYear()} DocSense. Integrated with Google Gemini.</p>
       </footer>
+
+      {/* Secret Toast/Alert Popup */}
+      <AnimatePresence>
+        {showSecret && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-6 right-6 z-[100] max-w-sm"
+          >
+            <div className="glass-panel p-6 shadow-2xl border border-white/50 rounded-2xl relative overflow-hidden glass-reflection-container bg-white/40 backdrop-blur-xl">
+              <div className="glass-reflection-shine" />
+              <div className="flex flex-col gap-3 relative z-10">
+                <div className="flex items-center gap-2 text-sky-500">
+                  <span className="text-2xl filter drop-shadow-[0_2px_4px_rgba(14,165,233,0.3)]">🌊</span>
+                  <h4 className="font-extrabold text-sky-950 text-shadow-sm text-sm uppercase tracking-wider">Secret Message</h4>
+                </div>
+                <p className="text-xs font-semibold text-slate-800 leading-relaxed">
+                  You discovered a hidden portal! 🔮
+                  <br /><br />
+                  &ldquo;Nique ta mere&rdquo;
+                  <br /><br />
+                  Zebiiiiii
+                </p>
+                <button
+                  onClick={() => setShowSecret(false)}
+                  className="mt-2 py-2 px-4 glossy-button-blue font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-md text-center"
+                >
+                  Close Portal
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Invisible Clickable Button in Bottom Right */}
+      <button
+        onClick={() => setShowSecret(true)}
+        className="fixed bottom-0 right-0 w-12 h-12 z-50 cursor-default opacity-0"
+        aria-label="Secret Easter Egg"
+      />
     </div>
   );
 }
