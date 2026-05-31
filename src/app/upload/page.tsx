@@ -187,7 +187,7 @@ export default function Home() {
                   <div className="flex flex-col items-start justify-center py-8 pl-4 md:pl-8">
                     <h1
                       style={{
-                        fontFamily: "'Convection', 'Segoe UI', 'Frutiger', sans-serif",
+                        fontFamily: "var(--font-sans)",
                         WebkitTextStroke: '1.5px black',
                       }}
                       className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-wider text-left"
@@ -225,7 +225,7 @@ export default function Home() {
                             }}
                             transition={{ type: "spring", stiffness: 350, damping: 20 }}
                             style={{
-                              fontFamily: "'Convection', 'Segoe UI', 'Frutiger', sans-serif",
+                              fontFamily: "var(--font-sans)",
                               WebkitTextStroke: '1px black',
                               transformOrigin: 'left center'
                             }}
