@@ -202,6 +202,13 @@ export default function ClassTrial({ game }: Props) {
                     isComplete={state.isLineComplete}
                     onLineTyped={() => dispatch({ type: "LINE_TYPED" })}
                     onInteract={() => dispatch({ type: "ADVANCE_DIALOGUE" })}
+                    onChoice={(value) =>
+                      dispatch(
+                        value === "skip"
+                          ? { type: "SKIP_TUTORIAL" }
+                          : { type: "ADVANCE_DIALOGUE" }
+                      )
+                    }
                   />
                 </motion.div>
               )}

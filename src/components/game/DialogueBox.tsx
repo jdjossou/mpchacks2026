@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 import type { DialogueLine, Character } from "@/lib/game/gameTypes";
 import { useTypewriter } from "./useTypewriter";
 
@@ -11,6 +12,8 @@ interface Props {
   onLineTyped: () => void;
   /** Called when the user clicks: skip if typing, advance if done */
   onInteract: () => void;
+  /** Called with a choice's value when the line is a branching prompt */
+  onChoice?: (value: string) => void;
 }
 
 /**
@@ -23,8 +26,10 @@ export default function DialogueBox({
   isComplete,
   onLineTyped,
   onInteract,
+  onChoice,
 }: Props) {
   const speaker = characters.find((c) => c.id === line.speakerId);
+  const hasChoices = !!line.choices?.length;
 
   const { displayed, skip } = useTypewriter(line.text, {
     speed: 25,
@@ -42,15 +47,15 @@ export default function DialogueBox({
   const handleClick = () => {
     if (!isComplete) {
       skip(); // reveal text instantly
-    } else {
-      onInteract(); // advance to next line
+    } else if (!hasChoices) {
+      onInteract(); // advance to next line (choice lines wait for a pick)
     }
   };
 
   return (
     <div
-      className="dialogue-box mx-5 mb-5 cursor-pointer select-none"
-      style={{ minHeight: "150px" }}
+      className="dialogue-box mx-5 mb-5 select-none"
+      style={{ minHeight: "150px", cursor: hasChoices && isComplete ? "default" : "pointer" }}
       onClick={handleClick}
       role="button"
       aria-label="Click to continue dialogue"
@@ -86,19 +91,41 @@ export default function DialogueBox({
           </p>
         </div>
 
-        {/* "Click to continue" indicator — fixed-height row, fades in when done
-            so its appearance doesn't change the box height. */}
-        <div className="flex justify-end mt-1 h-5">
-          <span
-            className="text-[#9fe9ff] text-sm transition-opacity duration-150"
-            style={{
-              opacity: isComplete ? 1 : 0,
-              animation: "aero-pulse 0.9s ease-in-out infinite",
-            }}
+        {/* Footer: branching choices for prompt lines, otherwise the
+            "click to continue" indicator. */}
+        {hasChoices ? (
+          <div
+            className="flex flex-wrap justify-end gap-2 mt-2 min-h-[2.25rem] transition-opacity duration-150"
+            style={{ opacity: isComplete ? 1 : 0, pointerEvents: isComplete ? "auto" : "none" }}
           >
-            ▼ click to continue
-          </span>
-        </div>
+            {line.choices!.map((choice) => (
+              <motion.button
+                key={choice.value}
+                className="aero-button px-4 py-1.5 text-sm font-bold tracking-wide"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChoice?.(choice.value);
+                }}
+              >
+                {choice.label}
+              </motion.button>
+            ))}
+          </div>
+        ) : (
+          <div className="flex justify-end mt-1 h-5">
+            <span
+              className="text-[#9fe9ff] text-sm transition-opacity duration-150"
+              style={{
+                opacity: isComplete ? 1 : 0,
+                animation: "aero-pulse 0.9s ease-in-out infinite",
+              }}
+            >
+              ▼ click to continue
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

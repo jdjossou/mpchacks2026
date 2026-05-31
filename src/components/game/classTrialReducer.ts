@@ -55,6 +55,7 @@ export type Action =
   | { type: "ADVANCE_DIALOGUE" }
   | { type: "LINE_TYPED" }
   | { type: "SKIP_LINE" }
+  | { type: "SKIP_TUTORIAL" }
   | { type: "START_SOLVING" }
   | { type: "NEXT_STATEMENT" }
   | { type: "SELECT_BULLET"; bulletId: string }
@@ -178,6 +179,17 @@ export function classTrialReducer(
 
       return state;
     }
+
+    // ── Skip the tutorial → jump straight to the truth-bullet preview ──────
+    case "SKIP_TUTORIAL":
+      if (state.phase !== "tutorial") return state;
+      return {
+        ...state,
+        phase: "answerPreview",
+        dialogueScript: [],
+        dialogueIndex: 0,
+        isLineComplete: false,
+      };
 
     // ── Transition to solving phase ────────────────────────────────────────
     case "START_SOLVING":

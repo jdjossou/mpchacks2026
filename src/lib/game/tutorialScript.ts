@@ -6,6 +6,15 @@ import type { DialogueLine } from "./gameTypes";
  */
 export const tutorialScript: DialogueLine[] = [
   {
+    id: "tut-0",
+    speakerId: "teacher",
+    text: "Before we begin — shall I explain how the Class Trial works, or would you like to skip ahead?",
+    choices: [
+      { label: "Explain the rules", value: "continue" },
+      { label: "Skip tutorial", value: "skip" },
+    ],
+  },
+  {
     id: "tut-1",
     speakerId: "teacher",
     text: "Welcome to the Class Trial! Two students will debate the topic you just studied.",

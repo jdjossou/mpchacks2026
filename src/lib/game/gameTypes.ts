@@ -28,11 +28,21 @@ export type Character = {
   avatar: string;
 };
 
+export type DialogueChoice = {
+  label: string;
+  value: string;
+};
+
 export type DialogueLine = {
   id: string;
   speakerId: CharacterId;
   text: string;
   audioUrl?: string;
+  /**
+   * If present, the line is a branching prompt: the dialogue does NOT advance
+   * on click — the player must pick one of these choices to continue.
+   */
+  choices?: DialogueChoice[];
 };
 
 export type Debate = {
