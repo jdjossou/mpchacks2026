@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import type { DialogueLine, Character } from "@/lib/game/gameTypes";
 import { useTypewriter } from "./useTypewriter";
 import { playSound } from "@/lib/sound";
 import { isMuted, subscribe } from "@/lib/audioSettings";
+import {
+  isVoiceActingEnabled,
+  subscribe as subscribeToVoiceActing,
+} from "@/lib/voiceActingSettings";
 
 interface Props {
   line: DialogueLine;
@@ -32,6 +36,11 @@ export default function DialogueBox({
 }: Props) {
   const speaker = characters.find((c) => c.id === line.speakerId);
   const hasChoices = !!line.choices?.length;
+  const voiceActingEnabled = useSyncExternalStore(
+    subscribeToVoiceActing,
+    isVoiceActingEnabled,
+    () => true
+  );
 
   const { displayed, skip } = useTypewriter(line.text, {
     speed: 25,
@@ -39,6 +48,7 @@ export default function DialogueBox({
   });
 
   useEffect(() => {
+    if (!voiceActingEnabled) return;
     if (!line.audioUrl) return;
 
     const audio = new Audio(line.audioUrl);
@@ -56,7 +66,7 @@ export default function DialogueBox({
       audio.pause();
       audio.currentTime = 0;
     };
-  }, [line.audioUrl, line.id]);
+  }, [line.audioUrl, line.id, voiceActingEnabled]);
 
   // When the external state says "line is complete", make sure the text is revealed
   useEffect(() => {

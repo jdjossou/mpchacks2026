@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle,
-  Globe,
   Search,
   ArrowLeft,
   Play
@@ -24,6 +23,11 @@ import {
 import { playSound } from '@/lib/sound';
 import { playMusic } from '@/lib/music';
 import { isMuted, toggleMuted, subscribe } from '@/lib/audioSettings';
+import {
+  isVoiceActingEnabled,
+  toggleVoiceActing,
+  subscribe as subscribeToVoiceActing,
+} from '@/lib/voiceActingSettings';
 import { PREMADE_LEVELS } from '@/lib/game/premadeLevels';
 import type { GameConfig } from '@/lib/game/gameTypes';
 
@@ -41,7 +45,14 @@ export default function Home() {
   const [menuView, setMenuView] = useState<'main' | 'settings' | 'browse'>('main');
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filePickerRequest, setFilePickerRequest] = useState<number>(0);
+  const [fileInputResetRequest, setFileInputResetRequest] = useState<number>(0);
   const muted = useSyncExternalStore(subscribe, isMuted, () => false);
+  const voiceActingEnabled = useSyncExternalStore(
+    subscribeToVoiceActing,
+    isVoiceActingEnabled,
+    () => true
+  );
 
   const handleSelectPremadeLevel = (level: GameConfig) => {
     playSound('menu_select');
@@ -62,6 +73,12 @@ export default function Home() {
   const addTeacherVoiceovers = async (
     payload: GeneratedGameStoragePayload
   ): Promise<GeneratedGameStoragePayload> => {
+    if (!voiceActingEnabled) {
+      const textOnlyPayload = { ...payload };
+      delete textOnlyPayload.voiceovers;
+      return textOnlyPayload;
+    }
+
     const candidate = payload.json;
     if (!candidate || typeof candidate !== 'object') return payload;
 
@@ -117,6 +134,18 @@ export default function Home() {
     }
   }, []);
 
+  useEffect(() => {
+    if (filePickerRequest === 0) return;
+    fileInputRef.current?.click();
+  }, [filePickerRequest]);
+
+  useEffect(() => {
+    if (fileInputResetRequest === 0) return;
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [fileInputResetRequest]);
+
 
 
   /* File size formatter (unused but preserved)
@@ -159,7 +188,7 @@ export default function Home() {
   };
 
   const handleUploadClick = () => {
-    fileInputRef.current?.click();
+    setFilePickerRequest((request) => request + 1);
   };
 
   const handleFileSelection = (selectedFile: File) => {
@@ -341,9 +370,7 @@ export default function Home() {
         setHasLoadedGame(false);
         setFile(null);
         setError(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+        setFileInputResetRequest((request) => request + 1);
       }
     }] : []),
     {
@@ -373,6 +400,14 @@ export default function Home() {
           if (prev === 'Medium') return 'Hard';
           return 'Easy';
         });
+      }
+    },
+    {
+      id: 'voice_acting',
+      name: `Voice Acting: ${voiceActingEnabled ? 'On' : 'Off'}`,
+      onClick: () => {
+        playSound('menu_select');
+        toggleVoiceActing();
       }
     },
     {
