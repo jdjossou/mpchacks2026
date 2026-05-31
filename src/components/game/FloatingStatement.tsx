@@ -1,14 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { motion, type Variants } from "framer-motion";
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import type { DebateStatement } from "@/lib/game/gameTypes";
+
+type ShotFeedback = {
+  id: number;
+  outcome: "hit" | "miss";
+  timePenaltySeconds?: number;
+};
 
 interface Props {
   statement: DebateStatement;
   isTargetable: boolean; // a bullet is being dragged and this statement isn't resolved
   isResolved: boolean; // already correctly refuted
-  lastShotOutcome: "hit" | "miss" | null; // transient flash state
+  shotFeedback: ShotFeedback | null; // transient flash and timer penalty state
 }
 
 function rand(min: number, max: number) {
@@ -119,10 +125,20 @@ export default function FloatingStatement({
   statement,
   isTargetable,
   isResolved,
-  lastShotOutcome,
+  shotFeedback,
 }: Props) {
   // Stable per mount — re-rolls every rotation because the parent re-keys us.
   const [m] = useState(rollMotion);
+  const lastShotOutcome = shotFeedback?.outcome ?? null;
+  const penaltyFeedback =
+    shotFeedback?.outcome === "miss" && shotFeedback.timePenaltySeconds
+      ? shotFeedback
+      : null;
+  const penaltyFeedbackId = penaltyFeedback?.id ?? null;
+  const penaltyAngle = useMemo(
+    () => (penaltyFeedbackId ? rand(-14, 14) : 0),
+    [penaltyFeedbackId]
+  );
 
   // Hit/miss shake (mirrors the old StatementCard feedback)
   const shakeVariants: Variants = {
@@ -171,6 +187,25 @@ export default function FloatingStatement({
               data-statement-drop-id={isResolved ? undefined : statement.id}
             >
               <p className={textClasses}>{statement.text}</p>
+
+              <AnimatePresence>
+                {penaltyFeedback && (
+                  <motion.div
+                    key={penaltyFeedback.id}
+                    className="pointer-events-none absolute right-[3%] top-[-2.1rem] z-20 text-4xl font-black text-[#ff3b3b]"
+                    style={{
+                      textShadow:
+                        "-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 0 16px #ff1f1f",
+                    }}
+                    initial={{ opacity: 0, scale: 0.55, y: 10, rotate: penaltyAngle - 8 }}
+                    animate={{ opacity: [0, 1, 1, 0], scale: [0.55, 1.18, 1, 0.92], y: [10, -4, -12, -20], rotate: penaltyAngle }}
+                    exit={{ opacity: 0, scale: 0.9, y: -24, rotate: penaltyAngle }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                  >
+                    -{penaltyFeedback.timePenaltySeconds}s
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* CORRECTED stamp */}
               {isResolved && (

@@ -21,6 +21,7 @@ import ResultsScreen     from "./ResultsScreen";
 
 // How long each statement stays on stage before the debate rotates to the next.
 const STATEMENT_WINDOW_MS = 5000;
+const TIMEOUT_PENALTY_RESULT_DELAY_MS = 800;
 
 interface Props {
   game: GameConfig;
@@ -100,18 +101,18 @@ export default function ClassTrial({ game }: Props) {
 
   // ── Debate rotation: cycle to the next statement on a steady beat ──────
   useEffect(() => {
-    if (state.phase !== "solving") return;
+    if (state.phase !== "solving" || state.pendingTimeoutFail) return;
     const id = setInterval(
       () => dispatch({ type: "NEXT_STATEMENT" }),
       STATEMENT_WINDOW_MS
     );
     return () => clearInterval(id);
-  }, [state.phase, dispatch]);
+  }, [state.phase, state.pendingTimeoutFail, dispatch]);
 
   // ── Once the active statement is corrected, rotate it out promptly ─────
   // (keeps the CORRECTED stamp on screen for a beat, then moves on)
   useEffect(() => {
-    if (state.phase !== "solving" || state.pendingWin) return;
+    if (state.phase !== "solving" || state.pendingWin || state.pendingTimeoutFail) return;
     const activeId = game.debate.statements[state.activeStatementIndex]?.id;
     if (!activeId || !state.resolvedStatements[activeId]) return;
     const id = setTimeout(() => dispatch({ type: "NEXT_STATEMENT" }), 1000);
@@ -119,6 +120,7 @@ export default function ClassTrial({ game }: Props) {
   }, [
     state.phase,
     state.pendingWin,
+    state.pendingTimeoutFail,
     state.activeStatementIndex,
     state.resolvedStatements,
     game,
@@ -131,6 +133,16 @@ export default function ClassTrial({ game }: Props) {
     const id = setTimeout(() => dispatch({ type: "ENTER_WIN_CONCLUSION" }), 1400);
     return () => clearTimeout(id);
   }, [state.pendingWin, dispatch]);
+
+  // ── If a miss penalty drains the clock, let the penalty badge play first ─
+  useEffect(() => {
+    if (!state.pendingTimeoutFail) return;
+    const id = setTimeout(
+      () => dispatch({ type: "GO_TIMEOUT_RESULTS" }),
+      TIMEOUT_PENALTY_RESULT_DELAY_MS
+    );
+    return () => clearTimeout(id);
+  }, [state.pendingTimeoutFail, dispatch]);
 
   // ─── Derive the active speaker for CharacterStage ─────────────────────
   const activeSpeakerId = (() => {
@@ -275,9 +287,9 @@ export default function ClassTrial({ game }: Props) {
                       !state.resolvedStatements[activeStatement.id]
                     }
                     isResolved={!!state.resolvedStatements[activeStatement.id]}
-                    lastShotOutcome={
+                    shotFeedback={
                       state.lastShot?.statementId === activeStatement.id
-                        ? state.lastShot.outcome
+                        ? state.lastShot
                         : null
                     }
                   />

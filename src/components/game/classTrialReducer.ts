@@ -3,6 +3,8 @@ import { tutorialScript } from "@/lib/game/tutorialScript";
 import { isWon } from "@/lib/game/selectors";
 import { SCORE_HIT, SCORE_MISS_PEN } from "@/lib/game/scoring";
 
+export const TIME_MISS_PENALTY_SECONDS = 10;
+
 // ─── Phase ────────────────────────────────────────────────────────────────
 export type Phase =
   | "intro"            // teacher: data-driven topic intro
@@ -27,13 +29,17 @@ export type GameState = {
   resolvedStatements: Record<string, true>; // statementId → solved
   usedBullets: Record<string, true>;        // bulletId → consumed
   lastShot: {
+    id: number;
     bulletId: string;
     statementId: string;
     outcome: "hit" | "miss";
+    timePenaltySeconds?: number;
   } | null;
+  shotFeedbackId: number;
   // Set when the winning statement is corrected: we stay in `solving` briefly so
   // its CORRECTED animation plays, then transition to the win conclusion.
   pendingWin: boolean;
+  pendingTimeoutFail: boolean;
 
   // Scoring / stats
   mistakes: number;
@@ -59,6 +65,7 @@ export type Action =
   | { type: "FIRE_AT"; statementId: string; bulletId: string }
   | { type: "TICK" }
   | { type: "CLEAR_LAST_SHOT" }
+  | { type: "GO_TIMEOUT_RESULTS" }
   | { type: "ENTER_WIN_CONCLUSION" }
   | { type: "GO_RESULTS" }
   | { type: "RESET" };
@@ -76,7 +83,9 @@ export function makeInitialState(): GameState {
     resolvedStatements: {},
     usedBullets: {},
     lastShot: null,
+    shotFeedbackId: 0,
     pendingWin: false,
+    pendingTimeoutFail: false,
     mistakes: 0,
     score: 0,
     timeLeft: 120,
@@ -187,7 +196,7 @@ export function classTrialReducer(
 
     // ── Rotate to the next unresolved statement ────────────────────────────
     case "NEXT_STATEMENT": {
-      if (state.phase !== "solving" || state.pendingWin) return state;
+      if (state.phase !== "solving" || state.pendingWin || state.pendingTimeoutFail) return state;
       return {
         ...state,
         activeStatementIndex: nextStatementIndex(
@@ -201,7 +210,7 @@ export function classTrialReducer(
 
     // ── Timer tick ────────────────────────────────────────────────────────
     case "TICK": {
-      if (state.phase !== "solving") return state;
+      if (state.phase !== "solving" || state.pendingTimeoutFail) return state;
       const newTime = state.timeLeft - 1;
       if (newTime <= 0) {
         return {
@@ -230,6 +239,8 @@ export function classTrialReducer(
     case "FIRE_AT": {
       const { statementId, bulletId: selectedBulletId } = action;
 
+      // Guard: timeout penalty is already playing before fail results
+      if (state.pendingTimeoutFail) return state;
       // Guard: must carry a bullet
       if (!selectedBulletId) return state;
       // Guard: already resolved
@@ -252,6 +263,7 @@ export function classTrialReducer(
         const newResolved = { ...state.resolvedStatements, [statementId]: true as const };
         const newUsed     = { ...state.usedBullets, [selectedBulletId]: true as const };
         const newScore    = state.score + SCORE_HIT;
+        const nextShotFeedbackId = state.shotFeedbackId + 1;
 
         const won = isWon(config, newResolved);
 
@@ -261,7 +273,13 @@ export function classTrialReducer(
           usedBullets: newUsed,
           score: newScore,
           selectedBulletId: null,
-          lastShot: { bulletId: selectedBulletId, statementId, outcome: "hit" },
+          lastShot: {
+            id: nextShotFeedbackId,
+            bulletId: selectedBulletId,
+            statementId,
+            outcome: "hit",
+          },
+          shotFeedbackId: nextShotFeedbackId,
           // The corrected card keeps its CORRECTED stamp on screen briefly.
           // On a win we stay in `solving` and set `pendingWin` so the final
           // statement's CORRECTED animation plays; ClassTrial then dispatches
@@ -276,18 +294,41 @@ export function classTrialReducer(
       // Miss: penalty, bullet NOT consumed (forgiving)
       const newMistakes = state.mistakes + 1;
       const newScore    = Math.max(0, state.score - SCORE_MISS_PEN);
+      const newTime     = Math.max(0, state.timeLeft - TIME_MISS_PENALTY_SECONDS);
+      const nextShotFeedbackId = state.shotFeedbackId + 1;
       return {
         ...state,
         mistakes: newMistakes,
         score: newScore,
+        timeLeft: newTime,
+        timerRunning: newTime === 0 ? false : state.timerRunning,
+        pendingTimeoutFail: newTime === 0,
         selectedBulletId: null,
-        lastShot: { bulletId: selectedBulletId, statementId, outcome: "miss" },
+        lastShot: {
+          id: nextShotFeedbackId,
+          bulletId: selectedBulletId,
+          statementId,
+          outcome: "miss",
+          timePenaltySeconds: TIME_MISS_PENALTY_SECONDS,
+        },
+        shotFeedbackId: nextShotFeedbackId,
       };
     }
 
     // ── Clear the transient shot feedback ─────────────────────────────────
     case "CLEAR_LAST_SHOT":
       return { ...state, lastShot: null };
+
+    // ── After a miss penalty drops the timer to zero, show fail results ────
+    case "GO_TIMEOUT_RESULTS":
+      if (!state.pendingTimeoutFail) return state;
+      return {
+        ...state,
+        phase: "results",
+        outcome: "fail",
+        timerRunning: false,
+        pendingTimeoutFail: false,
+      };
 
     // ── After the winning CORRECTED animation, move to the conclusion ──────
     case "ENTER_WIN_CONCLUSION":
