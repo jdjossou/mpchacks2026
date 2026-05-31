@@ -42,15 +42,28 @@ function StageAvatar({ character }: { character: Character }) {
   const style = CHARACTER_STYLE[character.id];
 
   return (
+    // Framer drives the enter/exit transform (y/scale). The looping CSS
+    // bob/shake animations also write `transform`, so they live on nested
+    // wrappers — otherwise a running CSS animation outranks Framer's inline
+    // transform and snaps the sprite to its 0% keyframe on mount (the sprite
+    // pops in low, then jumps up). Nesting lets the transforms compose.
     <motion.div
       className="flex items-end justify-center h-full"
       initial={{ opacity: 0, y: 48, scale: 0.85 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 36, scale: 0.9 }}
       transition={{ type: "spring", stiffness: 320, damping: 22 }}
-      style={{
-        animation: `character-bob ${style.bob}s ease-in-out infinite, character-shake ${style.shake}s ease-in-out infinite`,
-      }}
+      // Grow from the feet so the entrance `scale` doesn't push the sprite's
+      // bottom edge down (which read as a vertical "dip" on mount).
+      style={{ transformOrigin: "bottom center" }}
+    >
+    <div
+      className="flex items-end justify-center h-full"
+      style={{ animation: `character-bob ${style.bob}s ease-in-out infinite` }}
+    >
+    <div
+      className="flex items-end justify-center h-full"
+      style={{ animation: `character-shake ${style.shake}s ease-in-out infinite` }}
     >
       {character.avatar ? (
         /* eslint-disable-next-line @next/next/no-img-element */
@@ -85,6 +98,8 @@ function StageAvatar({ character }: { character: Character }) {
       >
         {style.emoji}
       </span>
+    </div>
+    </div>
     </motion.div>
   );
 }

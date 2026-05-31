@@ -192,7 +192,11 @@ export default function ClassTrial({ game }: Props) {
     <div className="w-full h-full flex flex-col overflow-hidden select-none" style={{ backgroundImage: "url('/backgrounds/classroom.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}>
 
       {/* ── HUD row: topic name + timer ──────────────────────────────────── */}
-      <div className="flex items-center justify-between px-5 pt-3 pb-2 shrink-0">
+      {/* Top-aligned: the timer (text-6xl, solving only) is far taller than the
+          title, so `items-center` would re-center — and thus vertically shift —
+          the title each time the timer mounts/unmounts between phases. Anchoring
+          to the top pins the title's Y regardless of the timer. */}
+      <div className="flex items-start justify-between px-5 pt-3 pb-2 shrink-0">
         <span
           className="text-[0.85rem] font-black tracking-widest uppercase text-[#57c7ff]/70"
           style={{ textShadow: "0 0 8px #57c7ff" }}
