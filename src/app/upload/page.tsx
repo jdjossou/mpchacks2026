@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -11,6 +11,7 @@ import { parsePDFAction, parseImageAction, parseTextAction, getLoadingMessagesAc
 import { GENERATED_GAME_STORAGE_KEY } from '@/lib/game/generatedGame';
 import { playSound } from '@/lib/sound';
 import { playMusic } from '@/lib/music';
+import { isMuted, toggleMuted, subscribe } from '@/lib/audioSettings';
 
 export default function Home() {
   const router = useRouter();
@@ -23,6 +24,9 @@ export default function Home() {
   const [showSecret, setShowSecret] = useState<boolean>(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hasLoadedGame, setHasLoadedGame] = useState<boolean>(false);
+  const [menuView, setMenuView] = useState<'main' | 'settings'>('main');
+  const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
+  const muted = useSyncExternalStore(subscribe, isMuted, () => false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -232,6 +236,79 @@ export default function Home() {
     }
   };
 
+  const menuItems = menuView === 'main' ? [
+    { id: 'browse', name: 'Browse Levels' },
+    {
+      id: 'play_upload',
+      name: hasLoadedGame ? 'Play' : 'Upload Level',
+      onClick: () => {
+        playSound('menu_select');
+        if (hasLoadedGame) {
+          router.push('/game');
+        } else {
+          handleUploadClick();
+        }
+      }
+    },
+    ...(hasLoadedGame ? [{
+      id: 'unload',
+      name: 'Unload Level',
+      onClick: () => {
+        playSound('menu_select');
+        localStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
+        sessionStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
+        setHasLoadedGame(false);
+        setFile(null);
+        setError(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    }] : []),
+    {
+      id: 'settings',
+      name: 'Settings',
+      onClick: () => {
+        playSound('menu_select');
+        setMenuView('settings');
+      }
+    },
+  ] : [
+    {
+      id: 'sound',
+      name: `Sound: ${muted ? 'Off' : 'On'}`,
+      onClick: () => {
+        playSound('menu_select');
+        toggleMuted();
+      }
+    },
+    {
+      id: 'difficulty',
+      name: `Difficulty: ${difficulty}`,
+      onClick: () => {
+        playSound('menu_select');
+        setDifficulty((prev) => {
+          if (prev === 'Easy') return 'Medium';
+          if (prev === 'Medium') return 'Hard';
+          return 'Easy';
+        });
+      }
+    },
+    {
+      id: 'language',
+      name: 'Language (EN)',
+    },
+    {
+      id: 'back',
+      name: 'Back',
+      onClick: () => {
+        playSound('menu_select');
+        setMenuView('main');
+      }
+    }
+  ];
+  const mid = (menuItems.length - 1) / 2;
+
   return (
     <div
       onDragEnter={handleDrag}
@@ -297,29 +374,15 @@ export default function Home() {
                     <div className="w-80 h-[2px] bg-gradient-to-r from-white/40 via-white/15 to-transparent mt-6 mb-16" />
 
                     <div className="flex flex-col gap-5 items-start justify-center h-[340px] w-full">
-                      {[
-                        { name: 'Browse Levels' },
-                        { name: hasLoadedGame ? 'Play' : 'Upload Level' },
-                        { name: 'Settings' },
-                      ].map((item, index) => {
-                        const baseX = (2.0 - Math.pow(Math.abs(1 - index), 1.5)) * 18;
-                        const baseRotate = (index - 1) * 6.0;
-                        const isPlay = item.name === 'Play';
-                        const isUpload = item.name === 'Upload Level';
-                        const isActive = isPlay || isUpload;
+                      {menuItems.map((item, index) => {
+                        const baseX = (2.0 - Math.pow(Math.abs(mid - index), 1.5)) * 18;
+                        const baseRotate = (index - mid) * 6.0;
+                        const isActive = !!item.onClick;
 
                         return (
                           <motion.button
-                            key={index === 1 ? 'upload-play' : item.name}
-                            onClick={
-                              index === 1
-                                ? () => {
-                                  playSound('menu_select');
-                                  if (hasLoadedGame) router.push('/game');
-                                  else handleUploadClick();
-                                }
-                                : undefined
-                            }
+                            key={item.id}
+                            onClick={item.onClick}
                             onMouseEnter={() => {
                               if (isActive) playSound('menu_hover');
                               setHoveredIndex(index);
