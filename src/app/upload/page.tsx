@@ -287,7 +287,7 @@ export default function Home() {
                       </AnimatePresence>
                     </div>
                     <p className="text-xs font-semibold text-sky-200 max-w-xs mx-auto mt-2">
-                      Mizue Sensei is analyzing and structuring details of &ldquo;{file?.name}&rdquo;...
+                      Mizue Sensei is rewieving &ldquo;{file?.name}&rdquo;...
                     </p>
                   </div>
                 </motion.div>
