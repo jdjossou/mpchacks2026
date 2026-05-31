@@ -5,13 +5,18 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle,
-  Globe
+  Globe,
+  Search,
+  ArrowLeft,
+  Play
 } from 'lucide-react';
 import { parsePDFAction, parseImageAction, parseTextAction, getLoadingMessagesAction } from '@/lib/parsing/actions';
 import { GENERATED_GAME_STORAGE_KEY } from '@/lib/game/generatedGame';
 import { playSound } from '@/lib/sound';
 import { playMusic } from '@/lib/music';
 import { isMuted, toggleMuted, subscribe } from '@/lib/audioSettings';
+import { PREMADE_LEVELS } from '@/lib/game/premadeLevels';
+import type { GameConfig } from '@/lib/game/gameTypes';
 
 export default function Home() {
   const router = useRouter();
@@ -24,9 +29,24 @@ export default function Home() {
   const [showSecret, setShowSecret] = useState<boolean>(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hasLoadedGame, setHasLoadedGame] = useState<boolean>(false);
-  const [menuView, setMenuView] = useState<'main' | 'settings'>('main');
+  const [menuView, setMenuView] = useState<'main' | 'settings' | 'browse'>('main');
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const muted = useSyncExternalStore(subscribe, isMuted, () => false);
+
+  const handleSelectPremadeLevel = (level: GameConfig) => {
+    playSound('menu_select');
+    const responseData = {
+      json: level,
+      version: 'premade',
+      size: 0,
+      name: `${level.title}.clashroom`,
+    };
+    sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
+    localStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
+    setHasLoadedGame(true);
+    router.push('/game');
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -237,7 +257,14 @@ export default function Home() {
   };
 
   const menuItems = menuView === 'main' ? [
-    { id: 'browse', name: 'Browse Levels' },
+    {
+      id: 'browse',
+      name: 'Browse Levels',
+      onClick: () => {
+        playSound('menu_select');
+        setMenuView('browse');
+      }
+    },
     {
       id: 'play_upload',
       name: hasLoadedGame ? 'Play' : 'Upload Level',
@@ -309,6 +336,12 @@ export default function Home() {
   ];
   const mid = (menuItems.length - 1) / 2;
 
+  const filteredLevels = PREMADE_LEVELS.filter(level =>
+    level.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    level.topic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    level.topic.summary.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div
       onDragEnter={handleDrag}
@@ -373,46 +406,113 @@ export default function Home() {
                     {/* Header Divider Line */}
                     <div className="w-80 h-[2px] bg-gradient-to-r from-white/40 via-white/15 to-transparent mt-6 mb-16" />
 
-                    <div className="flex flex-col gap-5 items-start justify-center h-[340px] w-full">
-                      {menuItems.map((item, index) => {
-                        const baseX = (2.0 - Math.pow(Math.abs(mid - index), 1.5)) * 18;
-                        const baseRotate = (index - mid) * 6.0;
-                        const isActive = !!item.onClick;
-
-                        return (
-                          <motion.button
-                            key={item.id}
-                            onClick={item.onClick}
-                            onMouseEnter={() => {
-                              if (isActive) playSound('menu_hover');
-                              setHoveredIndex(index);
+                    {menuView === 'browse' ? (
+                      <div className="w-full flex flex-col h-[340px] gap-4">
+                        {/* Search bar & Back Button */}
+                        <div className="flex items-center gap-3 w-full pr-4">
+                          <button
+                            onClick={() => {
+                              playSound('menu_select');
+                              setMenuView('main');
+                              setSearchQuery('');
                             }}
-                            onMouseLeave={() => setHoveredIndex(null)}
-                            whileTap={isActive ? { scale: 0.98 } : undefined}
-                            animate={{
-                              scale: hoveredIndex === index ? 1.45 : 1.0,
-                              x: hoveredIndex === index ? baseX + 20 : baseX,
-                              rotate: baseRotate,
-                              paddingTop: hoveredIndex === index ? 12 : 0,
-                              paddingBottom: hoveredIndex === index ? 12 : 0,
-                              opacity: hoveredIndex === null ? (isActive ? 1 : 0.4) : (hoveredIndex === index ? 1 : 0.25)
-                            }}
-                            transition={{ type: "spring", stiffness: 350, damping: 20 }}
-                            style={{
-                              fontFamily: "var(--font-sans)",
-                              WebkitTextStroke: '1px black',
-                              transformOrigin: 'left center'
-                            }}
-                            className={`text-left font-black tracking-wide relative text-4xl md:text-5xl ${isActive
-                              ? 'text-white cursor-pointer hover:text-sky-300'
-                              : 'text-white cursor-default'
-                              }`}
+                            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-white flex items-center justify-center cursor-pointer shadow-md hover:scale-105 active:scale-95 shrink-0"
+                            aria-label="Back to main menu"
                           >
-                            <span>{item.name}</span>
-                          </motion.button>
-                        );
-                      })}
-                    </div>
+                            <ArrowLeft className="w-5 h-5" />
+                          </button>
+                          <div className="relative flex-1">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
+                            <input
+                              type="text"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              placeholder="Search levels..."
+                              className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder-slate-300 focus:outline-none focus:border-sky-400 focus:bg-white/15 transition-all shadow-inner"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Level cards list */}
+                        <div className="flex-1 overflow-y-auto pr-3 space-y-3 scrollbar-thin scrollbar-thumb-sky-500/50 scrollbar-track-transparent">
+                          {filteredLevels.length > 0 ? (
+                            filteredLevels.map((level) => (
+                              <motion.div
+                                key={level.id}
+                                whileHover={{ scale: 1.02, x: 4 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => handleSelectPremadeLevel(level)}
+                                onMouseEnter={() => playSound('menu_hover')}
+                                className="glass-panel p-4 shadow-md border border-white/25 hover:border-white/45 rounded-2xl relative overflow-hidden bg-white/10 hover:bg-white/15 cursor-pointer flex flex-col justify-between transition-all group"
+                              >
+                                <div className="flex justify-between items-start gap-2">
+                                  <div className="space-y-0.5">
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-200 group-hover:text-sky-300 transition-colors">
+                                      {level.topic.name}
+                                    </span>
+                                    <h4 className="font-extrabold text-base text-white text-shadow-sm group-hover:text-sky-100 transition-colors">
+                                      {level.title}
+                                    </h4>
+                                  </div>
+                                </div>
+
+                                <div className="flex justify-end items-center mt-3 pt-2 border-t border-white/10 text-[10px] text-slate-300 font-bold">
+                                  <div className="flex items-center gap-1 text-sky-200 group-hover:text-sky-100 font-black">
+                                    <span>Play Level</span>
+                                    <Play className="w-3 h-3 fill-sky-200 group-hover:fill-sky-100 transition-all group-hover:translate-x-0.5" />
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))
+                          ) : (
+                            <div className="text-center py-10 text-sm text-slate-300 font-semibold bg-white/5 border border-white/10 rounded-2xl">
+                              No levels found matching &ldquo;{searchQuery}&rdquo;
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-5 items-start justify-center h-[340px] w-full">
+                        {menuItems.map((item, index) => {
+                          const baseX = (2.0 - Math.pow(Math.abs(mid - index), 1.5)) * 18;
+                          const baseRotate = (index - mid) * 6.0;
+                          const isActive = !!item.onClick;
+
+                          return (
+                            <motion.button
+                              key={item.id}
+                              onClick={item.onClick}
+                              onMouseEnter={() => {
+                                if (isActive) playSound('menu_hover');
+                                setHoveredIndex(index);
+                              }}
+                              onMouseLeave={() => setHoveredIndex(null)}
+                              whileTap={isActive ? { scale: 0.98 } : undefined}
+                              animate={{
+                                scale: hoveredIndex === index ? 1.45 : 1.0,
+                                x: hoveredIndex === index ? baseX + 20 : baseX,
+                                rotate: baseRotate,
+                                paddingTop: hoveredIndex === index ? 12 : 0,
+                                paddingBottom: hoveredIndex === index ? 12 : 0,
+                                opacity: hoveredIndex === null ? (isActive ? 1 : 0.4) : (hoveredIndex === index ? 1 : 0.25)
+                              }}
+                              transition={{ type: "spring", stiffness: 350, damping: 20 }}
+                              style={{
+                                fontFamily: "var(--font-sans)",
+                                WebkitTextStroke: '1px black',
+                                transformOrigin: 'left center'
+                              }}
+                              className={`text-left font-black tracking-wide relative text-4xl md:text-5xl ${isActive
+                                ? 'text-white cursor-pointer hover:text-sky-300'
+                                : 'text-white cursor-default'
+                                }`}
+                            >
+                              <span>{item.name}</span>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   <input
