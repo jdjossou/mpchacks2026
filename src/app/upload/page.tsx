@@ -348,7 +348,7 @@ export default function Home() {
       onDragOver={handleDrag}
       onDragLeave={handleDrag}
       onDrop={handleDrop}
-      className={`min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white transition-all duration-300 ${isDragActive ? 'brightness-110 contrast-95 ring-8 ring-sky-400/50 ring-inset' : ''
+      className={`min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white transition-all duration-300 overflow-x-hidden ${isDragActive ? 'brightness-110 contrast-95 ring-8 ring-sky-400/50 ring-inset' : ''
         }`}
       style={{
         backgroundImage: "linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0)), url('/backgrounds/frutiger.jpg')",
@@ -534,16 +534,29 @@ export default function Home() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="flex flex-col items-center justify-center p-12 text-center space-y-6"
                 >
-                  <div className="relative h-20 w-20">
-                    <div className="absolute inset-0 rounded-full border-4 border-sky-100" />
+                  <div className="relative h-24 w-24 flex items-center justify-center">
+                    {/* Outer spinner ring */}
+                    <div className="absolute inset-0 rounded-full border-4 border-white/20" />
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                      className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent"
+                      transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                      className="absolute inset-0 rounded-full border-4 border-sky-400 border-t-transparent"
                     />
-                    <div className="absolute inset-2 bg-white/80 rounded-full flex items-center justify-center shadow-inner border border-white">
-                      <Globe className="h-6 w-6 text-sky-500 animate-pulse" />
-                    </div>
+                    {/* Floating Mascot in center */}
+                    <motion.img
+                      src="/characters/mascot.png"
+                      alt="Loading Mascot"
+                      animate={{
+                        y: [0, -6, 0],
+                        rotate: [0, 4, -4, 0]
+                      }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 3,
+                        ease: "easeInOut"
+                      }}
+                      className="h-16 w-16 object-contain z-10 filter drop-shadow-[0_4px_10px_rgba(56,189,248,0.5)]"
+                    />
                   </div>
                   <div className="space-y-1">
                     <div className="h-8 flex items-center justify-center overflow-hidden">
@@ -573,13 +586,13 @@ export default function Home() {
           </div>
 
           {/* RIGHT HALF: TEACHER WITH FLOATING MASCOT */}
-          <div className="flex flex-col w-full h-full min-h-[500px] items-center justify-end relative pb-4">
+          <div className="flex flex-col w-full h-full min-h-[500px] items-center lg:items-end justify-end relative pb-4">
 
             {/* Glowing background aura */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-sky-400/15 blur-3xl pointer-events-none animate-pulse z-0" />
 
             {/* Characters Container (holds teacher and floating mascot, shifted slightly lower and to the right) */}
-            <div className="relative w-full max-w-md flex items-end justify-center z-10 translate-x-6 md:translate-x-12 translate-y-6 md:translate-y-10">
+            <div className="relative w-full max-w-md lg:max-w-lg flex items-end justify-center z-10 translate-x-10 md:translate-x-20 lg:translate-x-28 translate-y-6 md:translate-y-10">
 
               {/* Teacher (Big Size, centered, breathing animation) */}
               <motion.img
@@ -593,7 +606,7 @@ export default function Home() {
                   duration: 6,
                   ease: "easeInOut"
                 }}
-                className="h-[360px] md:h-[450px] w-auto object-contain select-none filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.3)] transition-all duration-300"
+                className="h-[400px] md:h-[500px] lg:h-[600px] w-auto object-contain select-none filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.3)] transition-all duration-300"
                 whileHover={{ scale: 1.02 }}
               />
 
@@ -608,7 +621,7 @@ export default function Home() {
                   duration: 4,
                   ease: "easeInOut"
                 }}
-                className="absolute top-[30px] md:top-[40px] right-[-20px] md:right-[-35px] z-20 flex flex-col items-center gap-1"
+                className="absolute top-[30px] md:top-[40px] right-[15px] md:right-[25px] z-20 flex flex-col items-center gap-1"
               >
                 {/* Mascot Image */}
                 <motion.img
