@@ -1,4 +1,5 @@
 import type { GameConfig } from "./gameTypes";
+import type { TeacherVoiceovers } from "@/lib/voice/elevenLabs";
 
 export const GENERATED_GAME_STORAGE_KEY = "clashroom:generated-game:v1";
 
@@ -21,6 +22,7 @@ export type GeneratedGameStoragePayload = {
   version: string;
   size: number;
   name: string;
+  voiceovers?: TeacherVoiceovers;
 };
 
 const REQUIRED_FIELDS = [
@@ -64,7 +66,8 @@ export function slugify(value: string): string {
 
 export function gameConfigFromParsedDocument(
   value: unknown,
-  sourceName = "uploaded-notes"
+  sourceName = "uploaded-notes",
+  voiceovers?: TeacherVoiceovers
 ): GameConfig {
   const json = requireParsedDocumentJson(value);
   const topic = json.topic.trim();
@@ -108,6 +111,7 @@ export function gameConfigFromParsedDocument(
       id: "intro-generated-001",
       speakerId: "teacher",
       text: json.intro.trim(),
+      audioUrl: voiceovers?.introAudioUrl,
     },
     debate: {
       id: "debate-generated-001",
@@ -178,6 +182,7 @@ export function gameConfigFromParsedDocument(
       id: "conclusion-generated-001",
       speakerId: "teacher",
       text: json.conclusion.trim(),
+      audioUrl: voiceovers?.conclusionAudioUrl,
     },
   };
 }

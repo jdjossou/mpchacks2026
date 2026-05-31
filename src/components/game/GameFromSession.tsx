@@ -26,7 +26,11 @@ function loadGeneratedGame(): GameConfig {
 
   try {
     const payload = JSON.parse(rawPayload) as GeneratedGameStoragePayload;
-    cachedGame = gameConfigFromParsedDocument(payload.json, payload.name);
+    cachedGame = gameConfigFromParsedDocument(
+      payload.json,
+      payload.name,
+      payload.voiceovers
+    );
   } catch (error) {
     console.warn("Falling back to sample game; generated payload is invalid.", error);
     cachedGame = sampleGame;

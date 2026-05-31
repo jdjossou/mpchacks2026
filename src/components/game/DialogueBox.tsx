@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { DialogueLine, Character } from "@/lib/game/gameTypes";
 import { useTypewriter } from "./useTypewriter";
 import { playSound } from "@/lib/sound";
+import { isMuted, subscribe } from "@/lib/audioSettings";
 
 interface Props {
   line: DialogueLine;
@@ -36,6 +37,26 @@ export default function DialogueBox({
     speed: 25,
     onDone: onLineTyped,
   });
+
+  useEffect(() => {
+    if (!line.audioUrl) return;
+
+    const audio = new Audio(line.audioUrl);
+    audio.volume = 0.95;
+    audio.muted = isMuted();
+
+    const unsubscribe = subscribe(() => {
+      audio.muted = isMuted();
+    });
+
+    void audio.play().catch(() => {});
+
+    return () => {
+      unsubscribe();
+      audio.pause();
+      audio.currentTime = 0;
+    };
+  }, [line.audioUrl, line.id]);
 
   // When the external state says "line is complete", make sure the text is revealed
   useEffect(() => {

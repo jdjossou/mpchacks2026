@@ -7,8 +7,17 @@ import {
   AlertCircle,
   Globe
 } from 'lucide-react';
-import { parsePDFAction, parseImageAction, parseTextAction, getLoadingMessagesAction } from '@/lib/parsing/actions';
-import { GENERATED_GAME_STORAGE_KEY } from '@/lib/game/generatedGame';
+import {
+  parsePDFAction,
+  parseImageAction,
+  parseTextAction,
+  getLoadingMessagesAction,
+  generateTeacherVoiceoversAction,
+} from '@/lib/parsing/actions';
+import {
+  GENERATED_GAME_STORAGE_KEY,
+  type GeneratedGameStoragePayload,
+} from '@/lib/game/generatedGame';
 import { playSound } from '@/lib/sound';
 import { playMusic } from '@/lib/music';
 
@@ -36,6 +45,45 @@ export default function Home() {
   const [speechIndex, setSpeechIndex] = useState<number>(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const addTeacherVoiceovers = async (
+    payload: GeneratedGameStoragePayload
+  ): Promise<GeneratedGameStoragePayload> => {
+    const candidate = payload.json;
+    if (!candidate || typeof candidate !== 'object') return payload;
+
+    const fields = candidate as Record<string, unknown>;
+    if (typeof fields.intro !== 'string' || typeof fields.conclusion !== 'string') {
+      return payload;
+    }
+
+    setCurrentMessage('Recording teacher voice...');
+
+    try {
+      const response = await generateTeacherVoiceoversAction({
+        intro: fields.intro,
+        conclusion: fields.conclusion,
+      });
+
+      if (!response.success) {
+        console.warn('Teacher voiceover generation skipped:', response.error);
+        return payload;
+      }
+
+      const voiceovers = response.data;
+      if (!voiceovers?.introAudioUrl && !voiceovers?.conclusionAudioUrl) {
+        return payload;
+      }
+
+      return {
+        ...payload,
+        voiceovers,
+      };
+    } catch (err) {
+      console.warn('Teacher voiceover generation failed; continuing text-only.', err);
+      return payload;
+    }
+  };
 
   // Loop the landing-page theme while on this screen
   useEffect(() => {
@@ -168,14 +216,15 @@ export default function Home() {
         throw new Error(`Invalid level JSON: missing fields ${missingKeys.join(', ')}`);
       }
 
-      const responseData = {
+      const responseData: GeneratedGameStoragePayload = {
         json: structuredJson,
         version: 'unknown',
         size: selectedFile.size,
         name: selectedFile.name,
       };
 
-      sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
+      const enrichedResponseData = await addTeacherVoiceovers(responseData);
+      sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(enrichedResponseData));
       setHasLoadedGame(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to parse JSON level file.');
@@ -230,7 +279,12 @@ export default function Home() {
 
       if (response.success && response.data) {
         console.log('Parsed document JSON:', response.data.json);
-        sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(response.data));
+        if (activeInterval) {
+          clearInterval(activeInterval);
+          activeInterval = null;
+        }
+        const enrichedResponseData = await addTeacherVoiceovers(response.data);
+        sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(enrichedResponseData));
         setHasLoadedGame(true);
       } else {
         const fileTypeLabel = isImg ? 'image' : isTxt ? 'TXT' : 'PDF';

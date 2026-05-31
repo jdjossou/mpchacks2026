@@ -3,6 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { PDFParse } from 'pdf-parse';
+import { generateTeacherVoiceovers, type TeacherVoiceovers } from '@/lib/voice/elevenLabs';
 
 const PARSING_DIR = path.join(
   /*turbopackIgnore: true*/ process.cwd(),
@@ -21,6 +22,11 @@ export interface PDFParseResult {
   name: string;
 }
 
+export type TeacherVoiceoverActionInput = {
+  intro: string;
+  conclusion: string;
+};
+
 type GeminiGenerateContentResponse = {
   candidates?: Array<{
     content?: {
@@ -33,6 +39,32 @@ type GeminiGenerateContentResponse = {
 
 function getErrorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback;
+}
+
+export async function generateTeacherVoiceoversAction(
+  input: TeacherVoiceoverActionInput
+): Promise<{ success: boolean; data?: TeacherVoiceovers; error?: string }> {
+  try {
+    if (!input || typeof input.intro !== 'string' || typeof input.conclusion !== 'string') {
+      return {
+        success: false,
+        error: 'Intro and conclusion text are required to generate teacher voiceovers.',
+      };
+    }
+
+    const data = await generateTeacherVoiceovers({
+      intro: input.intro.trim(),
+      conclusion: input.conclusion.trim(),
+    });
+
+    return { success: true, data };
+  } catch (err: unknown) {
+    console.error('ElevenLabs teacher voiceover error:', err);
+    return {
+      success: false,
+      error: getErrorMessage(err, 'Failed to generate teacher voiceovers.'),
+    };
+  }
 }
 
 async function readGeminiText(response: Response): Promise<string> {
