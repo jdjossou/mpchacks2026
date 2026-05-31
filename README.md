@@ -198,11 +198,11 @@ Open your web browser and navigate to:
 Traditional study materials are passive. Staring at dense text books or slideshows leads to poor recall and disengagement.
 
 ### The Solution
-Clashroom turns learning into a high-stakes investigation. By translating your files into a classic arcade debate game, it forces active recall and critical evaluation of facts in real-time.
+Clashroom turns learning into a high-stakes debate about your course material! By translating your files into a classic arcade game, it forces active recall and critical evaluation of facts in real-time.
 
 * **The Debate Stage**: Classmates float on screen, asserting statements generated directly from your source notes.
-* **The Truth Bullets**: You are handed bullets containing raw, factual counter-arguments.
-* **The Interrogation**: You must read the active statement, check your bullet inventory, drag the correct fact-check bullet, and fire it directly at the lie. Correcting the lie rotates the statement out, while getting it wrong or missing penalizes your time by 10 seconds.
+* **The Flashcards**: You are handed flashcards containing possible corrections for the statements.
+* **The Interrogation**: You must read the active statement, check your flashcards, drag the correct flashcard to the statement to correct it. Correcting the statement rotates the statement out, while getting it wrong or missing penalizes your time by 10 seconds.
 * **Letter Grades and Sharing**: Completing the case grades your performance from S to D. Once finished, you can save your customized study session as a portable .clashroom file and share it with friends to test their understanding.
 
 > [!TIP]
