@@ -301,7 +301,7 @@ export default function Home() {
                   )}
 
                   <div className="flex flex-col items-start justify-center py-8 pl-4 md:pl-8">
-                    <h1
+                    {/* <h1
                       style={{
                         fontFamily: "var(--font-sans)",
                         WebkitTextStroke: '1.5px black',
@@ -309,7 +309,7 @@ export default function Home() {
                       className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-wider text-left"
                     >
                       Clashroom : Crash n Learn
-                    </h1>
+                    </h1> */}
                     {/* Header Divider Line */}
                     <div className="w-80 h-[2px] bg-gradient-to-r from-white/40 via-white/15 to-transparent mt-6 mb-16" />
 

@@ -702,16 +702,6 @@ body {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
 }
 
-/* Solid, high-contrast backing for the bullet-explanation cards. */
-.arcade-explain-card {
-  background: linear-gradient(160deg, rgb(8 28 56 / 0.92), rgb(6 20 42 / 0.92));
-  border: 1px solid rgb(126 195 255 / 0.4);
-  border-radius: 0.6rem;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.18),
-    0 4px 14px rgb(0 0 0 / 0.45);
-}
-
 /* Pulsing neon glow for the big score readout. */
 @keyframes arcade-score-glow {
   0%, 100% { filter: drop-shadow(0 0 8px currentColor); }

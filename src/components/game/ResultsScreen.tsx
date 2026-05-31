@@ -85,7 +85,7 @@ export default function ResultsScreen({
         transition={{ type: "spring", stiffness: 200, damping: 16, delay: 0.2 }}
       >
         <div
-          className="text-3xl md:text-4xl font-black tracking-widest uppercase"
+          className="text-4xl md:text-5xl font-black tracking-widest uppercase"
           style={{
             color: isWin ? "#7ee787" : "#ff5555",
             textShadow: isWin
@@ -96,7 +96,7 @@ export default function ResultsScreen({
           {isWin ? "✓ Case Closed!" : "✗ Time's Up!"}
         </div>
         <p
-          className="text-[#dff6ff] text-sm mt-0.5 tracking-wide"
+          className="text-[#dff6ff] text-base md:text-lg mt-1 tracking-wide"
           style={{ textShadow: "0 1px 3px rgba(0,0,0,0.7)" }}
         >
           {isWin
@@ -105,139 +105,100 @@ export default function ResultsScreen({
         </p>
       </motion.div>
 
-      {/* Two-column body: scorecard + explanations side-by-side on wide screens */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full items-start">
-
-      {/* Score card */}
-      <motion.div
-        className="aero-glass-dark w-full p-4"
-        initial={{ y: 30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5 }}
-      >
-        {/* Rank medal + big HIGH SCORE readout */}
-        <div className="flex items-center justify-center gap-5 mb-3">
-          {/* Rank medal */}
-          <motion.div
-            className="arcade-rank-medal w-16 h-16 shrink-0"
-            style={
-              {
-                "--medal-from": medal.from,
-                "--medal-to": medal.to,
-                "--medal-ring": medal.ring,
-                "--medal-glow": medal.glow,
-              } as React.CSSProperties
-            }
-            initial={{ scale: 0, rotate: -30 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 240, damping: 14, delay: 0.7 }}
-          >
-            <div className="flex flex-col items-center leading-none">
-              <span
-                className="text-[0.55rem] font-bold uppercase tracking-[0.2em]"
-                style={{ color: medal.text, opacity: 0.8 }}
-              >
-                Rank
-              </span>
-              <span
-                className="text-3xl font-black"
-                style={{
-                  color: medal.text,
-                  fontFamily: "var(--font-mono)",
-                  textShadow: "0 1px 0 rgba(255,255,255,0.5)",
-                }}
-              >
-                {grade}
-              </span>
-            </div>
-          </motion.div>
-
-          {/* HIGH SCORE */}
-          <div className="text-left">
-            <p
-              className="text-xs uppercase tracking-[0.25em] mb-0.5 text-[#9fe9ff]"
-              style={{ textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}
-            >
-              High Score
-            </p>
-            <motion.p
-              className="text-4xl font-black tabular-nums"
-              style={{
-                color: scoreColor,
-                fontFamily: "var(--font-mono)",
-                animation: "arcade-score-glow 2.2s ease-in-out infinite",
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-            >
-              <CountUp value={score} delay={900} />
-            </motion.p>
-          </div>
-        </div>
-
-        {/* Score breakdown — leaderboard table */}
-        <div className="arcade-chrome-bar px-3 py-1 mb-1.5 text-center text-xs font-black uppercase tracking-[0.2em]">
-          Score Breakdown
-        </div>
-        <div className="space-y-1">
-          <ScoreLine index={0} label="Statements Corrected" value={`${solved} / ${total}`} positive />
-          {isWin && (
-            <ScoreLine index={1} label="Base Reward" value={`+${SCORE_BASE}`} positive />
-          )}
-          <ScoreLine index={2} label={`Hits (×${SCORE_HIT})`} value={`+${solved * SCORE_HIT}`} positive />
-          <ScoreLine index={3} label="Wrong Shots" value={`${mistakes}`} positive={mistakes === 0} />
-          {isWin && (
-            <ScoreLine
-              index={4}
-              label={`Time Bonus (${timeLeft}s × ${SCORE_TIME_BONUS})`}
-              value={`+${timeLeft * SCORE_TIME_BONUS}`}
-              positive
-            />
-          )}
-        </div>
-      </motion.div>
-
-      {/* Bullet explanations */}
-      <motion.div
-        className="w-full"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.9 }}
-      >
-        <p
-          className="text-xs uppercase tracking-[0.2em] mb-1.5 text-[#9fe9ff]"
-          style={{ textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}
+      <div className="grid w-full max-w-4xl grid-cols-1 gap-4 md:grid-cols-[minmax(17rem,21rem)_minmax(20rem,26rem)] md:items-stretch md:justify-center">
+        {/* Score breakdown */}
+        <motion.div
+          className="aero-glass-dark w-full p-4"
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
         >
-          Bullet Explanations
-        </p>
-        <div className="space-y-1.5">
-          {config.debate.answers.map((bullet) => {
-            const target = config.debate.statements.find(
-              (s) => s.id === bullet.targetsStatementId
-            );
-            const isRedHerring = bullet.type === "wrong";
-            return (
-              <div key={bullet.id} className="arcade-explain-card px-3 py-1.5 text-sm leading-snug">
-                <p
-                  className="font-bold"
-                  style={{ color: isRedHerring ? "#ff9a8a" : "#8df0a3" }}
-                >
-                  {isRedHerring ? "🚫 Red Herring: " : "✓ "}
-                  {bullet.text}
-                </p>
-                {target && (
-                  <p className="text-[#bcd9ee] text-xs italic">
-                    {`Corrects: "${target.text.slice(0, 60)}..."`}
-                  </p>
-                )}
-                <p className="text-[#eaf6ff]">{bullet.explanation}</p>
-              </div>
-            );
-          })}
-        </div>
-      </motion.div>
+          <div className="arcade-chrome-bar px-3 py-1 mb-2 text-center text-xs font-black uppercase tracking-[0.2em]">
+            Score Breakdown
+          </div>
+          <div className="space-y-1">
+            <ScoreLine index={0} label="Statements Corrected" value={`${solved} / ${total}`} positive />
+            {isWin && (
+              <ScoreLine index={1} label="Base Reward" value={`+${SCORE_BASE}`} positive />
+            )}
+            <ScoreLine index={2} label={`Hits (×${SCORE_HIT})`} value={`+${solved * SCORE_HIT}`} positive />
+            <ScoreLine index={3} label="Wrong Shots" value={`${mistakes}`} positive={mistakes === 0} />
+            {isWin && (
+              <ScoreLine
+                index={4}
+                label={`Time Bonus (${timeLeft}s × ${SCORE_TIME_BONUS})`}
+                value={`+${timeLeft * SCORE_TIME_BONUS}`}
+                positive
+              />
+            )}
+          </div>
+        </motion.div>
 
+        {/* Rank medal + big HIGH SCORE readout */}
+        <motion.div
+          className="aero-glass-dark flex w-full items-center justify-center p-5"
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.62 }}
+        >
+          <div className="flex items-center justify-center gap-5 sm:gap-6 md:flex-col md:gap-4">
+            <motion.div
+              className="arcade-rank-medal w-16 h-16 md:w-24 md:h-24 shrink-0"
+              style={
+                {
+                  "--medal-from": medal.from,
+                  "--medal-to": medal.to,
+                  "--medal-ring": medal.ring,
+                  "--medal-glow": medal.glow,
+                } as React.CSSProperties
+              }
+              initial={{ scale: 0, rotate: -30 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 240, damping: 14, delay: 0.7 }}
+            >
+              <div className="flex flex-col items-center leading-none">
+                <span
+                  className="text-[0.55rem] md:text-[0.68rem] font-bold uppercase tracking-[0.2em]"
+                  style={{ color: medal.text, opacity: 0.8 }}
+                >
+                  Rank
+                </span>
+                <span
+                  className="text-3xl md:text-5xl font-black"
+                  style={{
+                    color: medal.text,
+                    fontFamily: "var(--font-mono)",
+                    textShadow: "0 1px 0 rgba(255,255,255,0.5)",
+                  }}
+                >
+                  {grade}
+                </span>
+              </div>
+            </motion.div>
+
+            <div className="text-left md:text-center">
+              <p
+                className="text-xs uppercase tracking-[0.25em] mb-0.5 text-[#9fe9ff]"
+                style={{ textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}
+              >
+                High Score
+              </p>
+              <motion.p
+                className="text-4xl md:text-6xl font-black tabular-nums"
+                style={{
+                  color: scoreColor,
+                  fontFamily: "var(--font-mono)",
+                  animation: "arcade-score-glow 2.2s ease-in-out infinite",
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+              >
+                <CountUp value={score} delay={900} />
+              </motion.p>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Actions */}
@@ -248,7 +209,7 @@ export default function ResultsScreen({
         transition={{ delay: 1.2 }}
       >
         <motion.button
-          className="aero-button px-8 py-2 text-sm font-bold tracking-wide"
+          className="aero-button px-9 py-2.5 text-base font-bold tracking-wide"
           onClick={() => {
             playSound("menu_select");
             onReset();
@@ -259,7 +220,7 @@ export default function ResultsScreen({
           ↺ Play Again
         </motion.button>
         <motion.button
-          className="glossy-button-green glossy-shimmer px-7 py-2 text-sm font-bold tracking-wide rounded-full"
+          className="glossy-button-green glossy-shimmer px-8 py-2.5 text-base font-bold tracking-wide rounded-full"
           onClick={handleDownload}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.97 }}
