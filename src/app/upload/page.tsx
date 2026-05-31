@@ -1,16 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Upload,
-  FileText,
-  Shield,
-  Cpu,
-  Layers,
   AlertCircle,
-  FileCheck,
   Globe
 } from 'lucide-react';
 import { parsePDFAction, parseImageAction, getLoadingMessagesAction } from '@/lib/parsing/actions';
@@ -24,6 +18,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
   const [currentMessage, setCurrentMessage] = useState<string>('AI Structuring in Progress');
+  const [showSecret, setShowSecret] = useState<boolean>(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,11 +81,13 @@ export default function Home() {
       return;
     }
     setFile(selectedFile);
+    handleParse(selectedFile);
   };
 
   // Parsing trigger calling Gemini Action
-  const handleParse = async () => {
-    if (!file) return;
+  const handleParse = async (selectedFile?: File) => {
+    const fileToParse = selectedFile || file;
+    if (!fileToParse) return;
     setIsParsing(true);
     setError(null);
 
@@ -104,7 +102,7 @@ export default function Home() {
       activeInterval = setInterval(() => {
         setCurrentMessage((prev) => {
           const filtered = messages.filter((m) => m !== prev);
-          const nextMsg = filtered.length > 0 
+          const nextMsg = filtered.length > 0
             ? filtered[Math.floor(Math.random() * filtered.length)]
             : prev;
           return nextMsg;
@@ -116,9 +114,9 @@ export default function Home() {
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', fileToParse);
 
-      const isImg = file.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(file.name);
+      const isImg = fileToParse.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(fileToParse.name);
       const response = isImg ? await parseImageAction(formData) : await parsePDFAction(formData);
 
       if (response.success && response.data) {
@@ -152,25 +150,7 @@ export default function Home() {
       <div className="absolute top-[15%] right-[20%] w-32 h-32 rounded-full bg-white/20 border border-white/40 shadow-[inset_-10px_-10px_20px_rgba(255,255,255,0.2),_0_10px_20px_rgba(0,0,0,0.05)] pointer-events-none backdrop-blur-[2px] z-0" />
       <div className="absolute bottom-[25%] left-[10%] w-24 h-24 rounded-full bg-white/25 border border-white/50 shadow-[inset_-8px_-8px_15px_rgba(255,255,255,0.25),_0_8px_15px_rgba(0,0,0,0.05)] pointer-events-none backdrop-blur-[1px] z-0" />
 
-      {/* Header */}
-      <header className="border-b border-white/20 bg-white/10 backdrop-blur-lg sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.15)] glass-reflection-container">
-        <div className="glass-reflection-shine" />
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sky-400 via-sky-500 to-sky-600 border border-sky-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),_0_4px_10px_rgba(14,165,233,0.2)] flex items-center justify-center">
-            <FileText className="h-5 w-5 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]" />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-xl tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">DocSense</h1>
-            <p className="text-[10px] font-bold text-emerald-300 tracking-wide uppercase">AI-powered PDF & Image to JSON converter</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 text-xs relative z-10">
-          <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-400/90 to-teal-500/90 border border-emerald-300 text-white px-3.5 py-2 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.4),_0_4px_8px_rgba(16,185,129,0.15)] font-bold text-shadow-sm">
-            <Cpu className="h-3.5 w-3.5 animate-pulse text-emerald-100" />
-            <span>Gemini 2.5 Flash</span>
-          </div>
-        </div>
-      </header>
+
 
       {/* Main Content Layout Split */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 z-10 flex items-center justify-center">
@@ -180,31 +160,21 @@ export default function Home() {
           <div className="flex flex-col w-full h-full justify-center">
             <AnimatePresence mode="wait">
 
-              {/* UPLOAD & INITIAL STATE */}
+              {/* MENU SELECTIONS & UPLOADER */}
               {!isParsing && (
                 <motion.div
-                  key="uploader"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  transition={{ duration: 0.3 }}
+                  key="menu"
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  transition={{ duration: 0.4 }}
                   className="w-full flex flex-col gap-6"
                 >
-                  <div className="space-y-2">
-                    <h2 className="text-3xl font-black tracking-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
-                      Transform PDF or Image to Structured JSON
-                    </h2>
-                    <p className="text-sky-100 font-medium text-sm drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
-                      Drag and drop your PDF or image file below. Gemini will analyze the contents and compile them into a clean JSON output.
-                    </p>
-                  </div>
-
-                  {/* Error Alert */}
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="bg-red-500/10 border border-red-500/30 text-red-300 p-4 rounded-2xl flex items-start gap-3 text-sm backdrop-blur-md"
+                      className="bg-red-500/10 border border-red-500/30 text-red-300 p-4 rounded-2xl flex items-start gap-3 text-sm backdrop-blur-md max-w-md mb-4"
                     >
                       <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-red-400" />
                       <div className="space-y-1">
@@ -214,77 +184,70 @@ export default function Home() {
                     </motion.div>
                   )}
 
-                  {/* Uploader Drag Area */}
-                  <div
-                    onDragEnter={handleDrag}
-                    onDragOver={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 relative overflow-hidden glass-panel glass-reflection-container group ${isDragActive
-                      ? 'border-sky-500 bg-sky-100/40 shadow-xl'
-                      : 'border-sky-300/60 hover:border-sky-400 hover:bg-white/60 shadow-[0_8px_32px_rgba(31,38,135,0.06)]'
-                      }`}
-                  >
-                    <div className="glass-reflection-shine" />
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="application/pdf,image/*"
-                      className="hidden"
-                    />
-
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-400 via-emerald-400 to-teal-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                    <div className="p-4 bg-gradient-to-tr from-sky-100 to-white rounded-2xl border border-sky-200 shadow-[inset_0_2px_4px_rgba(255,255,255,0.9),_0_4px_8px_rgba(2,132,199,0.08)] mb-4 transition-transform group-hover:scale-110 duration-300">
-                      {file ? (
-                        <FileCheck className="h-8 w-8 text-emerald-500 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]" />
-                      ) : (
-                        <Upload className="h-8 w-8 text-sky-500 group-hover:text-sky-600 transition-colors" />
-                      )}
-                    </div>
-
-                    <div className="text-center space-y-1 relative z-10">
-                      <p className="font-bold text-sky-950">
-                        {file ? file.name : 'Select or drop a PDF or Image file'}
-                      </p>
-                      <p className="text-xs text-sky-850 font-medium">
-                        {file ? formatBytes(file.size) : 'PDF or Image up to 15MB'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Action Button */}
-                  {file && (
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      onClick={handleParse}
-                      className="w-full py-4 px-6 glossy-button-blue glossy-shimmer font-bold text-base hover:scale-[1.005] active:scale-[0.99] cursor-pointer"
+                  <div className="flex flex-col items-start justify-center py-8 pl-4 md:pl-8">
+                    <h1
+                      style={{
+                        fontFamily: "'Convection', 'Segoe UI', 'Frutiger', sans-serif",
+                        WebkitTextStroke: '1.5px black',
+                      }}
+                      className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-wider text-left"
                     >
-                      Convert with Gemini API
-                    </motion.button>
-                  )}
+                      Clashroom : Crash n Learn
+                    </h1>
+                    {/* Header Divider Line */}
+                    <div className="w-80 h-[2px] bg-gradient-to-r from-white/40 via-white/15 to-transparent mt-6 mb-16" />
 
-                  {/* Badges */}
-                  <div className="grid grid-cols-3 gap-4 pt-6 border-t border-sky-200/50">
-                    <div className="flex flex-col items-center text-center p-3 rounded-2xl bg-white/30 border border-white/50 backdrop-blur-md shadow-sm">
-                      <Shield className="h-5 w-5 text-sky-600 mb-2" />
-                      <span className="text-xs font-bold text-sky-950">Secure API</span>
-                      <span className="text-[10px] text-sky-850 font-semibold">Encrypted send</span>
-                    </div>
-                    <div className="flex flex-col items-center text-center p-3 rounded-2xl bg-white/30 border border-white/50 backdrop-blur-md shadow-sm">
-                      <Cpu className="h-5 w-5 text-emerald-600 mb-2" />
-                      <span className="text-xs font-bold text-sky-950">AI Transforming</span>
-                      <span className="text-[10px] text-sky-850 font-semibold">Structure mapping</span>
-                    </div>
-                    <div className="flex flex-col items-center text-center p-3 rounded-2xl bg-white/30 border border-white/50 backdrop-blur-md shadow-sm">
-                      <Layers className="h-5 w-5 text-teal-600 mb-2" />
-                      <span className="text-xs font-bold text-sky-950">Clean JSON</span>
-                      <span className="text-[10px] text-sky-850 font-semibold">Direct download</span>
+                    <div className="flex flex-col gap-5 items-start justify-center h-[340px] w-full">
+                      {[
+                        { name: 'Browse Levels', action: null },
+                        { name: 'Load Level', action: null },
+                        { name: 'Upload file', action: () => fileInputRef.current?.click() },
+                        { name: 'Play', action: null },
+                        { name: 'Settings', action: null },
+                      ].map((item, index) => {
+                        const baseX = (2.828 - Math.pow(Math.abs(2 - index), 1.5)) * 18;
+                        const baseRotate = (index - 2) * 6.0;
+
+                        return (
+                          <motion.button
+                            key={item.name}
+                            onClick={item.action || undefined}
+                            onMouseEnter={() => setHoveredIndex(index)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                            whileTap={item.action ? { scale: 0.98 } : undefined}
+                            animate={{
+                              scale: hoveredIndex === index ? 1.45 : 1.0,
+                              x: hoveredIndex === index ? baseX + 20 : baseX,
+                              rotate: baseRotate,
+                              paddingTop: hoveredIndex === index ? 12 : 0,
+                              paddingBottom: hoveredIndex === index ? 12 : 0,
+                              opacity: hoveredIndex === null ? (item.action ? 1 : 0.4) : (hoveredIndex === index ? 1 : 0.25)
+                            }}
+                            transition={{ type: "spring", stiffness: 350, damping: 20 }}
+                            style={{
+                              fontFamily: "'Convection', 'Segoe UI', 'Frutiger', sans-serif",
+                              WebkitTextStroke: '1px black',
+                              transformOrigin: 'left center'
+                            }}
+                            className={`text-left font-black tracking-wide relative text-3xl md:text-4xl ${item.action
+                                ? 'text-white cursor-pointer hover:text-sky-300'
+                                : 'text-white cursor-default'
+                              }`}
+                          >
+                            <span>{item.name}</span>
+                          </motion.button>
+                        );
+                      })}
                     </div>
                   </div>
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="application/pdf,image/*"
+                    className="hidden"
+                  />
                 </motion.div>
               )}
 
@@ -342,7 +305,7 @@ export default function Home() {
                 <motion.img
                   src="/characters/mascot.png"
                   alt="Mascot"
-                  className="max-h-full max-w-full object-contain scale-110 select-none mix-blend-screen"
+                  className="max-h-full max-w-full object-contain scale-75 select-none mix-blend-screen"
                   style={{ mixBlendMode: 'screen' }}
                   animate={{
                     y: [0, -8, 0]
@@ -361,10 +324,49 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-6 px-6 text-center text-xs font-bold text-sky-200/50 z-10 bg-black/20 backdrop-blur-md">
-        <p>© {new Date().getFullYear()} DocSense. Integrated with Google Gemini.</p>
-      </footer>
+
+
+      {/* Secret Toast/Alert Popup */}
+      <AnimatePresence>
+        {showSecret && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-6 right-6 z-[100] max-w-sm"
+          >
+            <div className="glass-panel p-6 shadow-2xl border border-white/50 rounded-2xl relative overflow-hidden glass-reflection-container bg-white/40 backdrop-blur-xl">
+              <div className="glass-reflection-shine" />
+              <div className="flex flex-col gap-3 relative z-10">
+                <div className="flex items-center gap-2 text-sky-500">
+                  <span className="text-2xl filter drop-shadow-[0_2px_4px_rgba(14,165,233,0.3)]">🌊</span>
+                  <h4 className="font-extrabold text-sky-950 text-shadow-sm text-sm uppercase tracking-wider">Secret Message</h4>
+                </div>
+                <p className="text-xs font-semibold text-slate-800 leading-relaxed">
+                  You discovered a hidden portal! 🔮
+                  <br /><br />
+                  &ldquo;Nique ta mere&rdquo;
+                  <br /><br />
+                  Zebiiiiii
+                </p>
+                <button
+                  onClick={() => setShowSecret(false)}
+                  className="mt-2 py-2 px-4 glossy-button-blue font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-md text-center"
+                >
+                  Close Portal
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Invisible Clickable Button in Bottom Right */}
+      <button
+        onClick={() => setShowSecret(true)}
+        className="fixed bottom-0 right-0 w-12 h-12 z-50 cursor-default opacity-0"
+        aria-label="Secret Easter Egg"
+      />
     </div>
   );
 }
