@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Share2 } from "lucide-react";
 import type { GameConfig } from "@/lib/game/gameTypes";
 import { finalScore, SCORE_BASE, SCORE_HIT, SCORE_TIME_BONUS } from "@/lib/game/scoring";
 import { solvedCount } from "@/lib/game/selectors";
@@ -226,6 +227,17 @@ export default function ResultsScreen({
           whileTap={{ scale: 0.97 }}
         >
           ⬇ Save Level
+        </motion.button>
+        <motion.button
+          type="button"
+          className="glossy-button-silver glossy-shimmer inline-flex items-center gap-2 px-8 py-2.5 text-base font-bold tracking-wide rounded-full"
+          aria-label="Share result"
+          onClick={() => {}}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.97 }}
+        >
+          <Share2 aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
+          Share
         </motion.button>
       </motion.div>
 
