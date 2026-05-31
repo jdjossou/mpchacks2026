@@ -17,7 +17,12 @@ export default function AnswerPreview({ bullets, onStart }: Props) {
   return (
     <div
       className="w-full h-full flex flex-col items-center justify-center px-5 py-4 overflow-y-auto"
-      style={{ background: "#050e1a" }}
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/backgrounds/classroom.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
       <motion.div
         className="w-full max-w-2xl flex flex-col"
@@ -28,12 +33,12 @@ export default function AnswerPreview({ bullets, onStart }: Props) {
         {/* Heading */}
         <div className="text-center mb-2">
           <h2
-            className="text-[#9fe9ff] font-black tracking-widest uppercase text-lg"
+            className="text-[#9fe9ff] font-black tracking-widest uppercase text-2xl"
             style={{ textShadow: "0 0 10px #57c7ff" }}
           >
             Your Truth Bullets
           </h2>
-          <p className="text-[#9fe9ff]/60 text-sm mt-1">
+          <p className="text-[#9fe9ff]/80 text-base mt-1">
             Study these now — once the debate starts, the clock is ticking.
           </p>
         </div>
@@ -50,13 +55,13 @@ export default function AnswerPreview({ bullets, onStart }: Props) {
             >
               <div className="flex items-start gap-3">
                 <span
-                  className="text-[#9fe9ff] text-lg leading-none mt-0.5"
+                  className="text-[#9fe9ff] text-xl leading-none mt-0.5"
                   aria-hidden="true"
                 >
                   ◇
                 </span>
                 <p
-                  className="text-white text-base leading-snug font-medium"
+                  className="text-white text-lg leading-snug font-medium"
                   style={{ textShadow: "0 1px 3px rgb(0 0 0 / 0.8)" }}
                 >
                   {b.text}
