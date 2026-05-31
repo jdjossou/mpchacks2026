@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 interface Props {
   children: ReactNode;
@@ -32,6 +33,14 @@ export default function ComputerFrame({ children }: Props) {
           <div className="crt-vignette" aria-hidden="true" />
           <div className="crt-glare" aria-hidden="true" />
         </div>
+
+        <Link
+          href="/upload"
+          aria-label="Close game and return to upload page"
+          className="windows-close-button"
+        >
+          <span aria-hidden="true">&#215;</span>
+        </Link>
 
         {/* Power LED */}
         <div className="crt-led" aria-hidden="true" />

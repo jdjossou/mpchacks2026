@@ -289,6 +289,53 @@ body {
 .aero-button:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .aero-button:active { transform: scale(0.97); filter: brightness(0.94); }
 
+/* Windows-style close control, tuned to the glossy game UI. */
+.windows-close-button {
+  position: absolute;
+  top: 0;
+  right: 2.75rem;
+  z-index: 80;
+  width: 2.35rem;
+  height: 1.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(255 255 255 / 0.62);
+  border-radius: 0 0 0.25rem 0.25rem;
+  background:
+    linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.58) 0%,
+      rgb(255 190 186 / 0.56) 46%,
+      rgb(212 76 76 / 0.72) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.85),
+    0 1px 3px rgb(0 0 0 / 0.24);
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 300;
+  line-height: 1;
+  text-decoration: none;
+  text-shadow:
+    0 1px 1px rgb(0 0 0 / 0.45),
+    0 0 4px rgb(255 255 255 / 0.22);
+}
+
+.windows-close-button::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 50% 0;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0.4), rgb(255 255 255 / 0.02));
+  pointer-events: none;
+}
+
+.windows-close-button:focus-visible {
+  outline: 2px solid #9fe9ff;
+  outline-offset: 3px;
+}
+
 /* Bullet chip selected state — soft, pulsing green glow instead of a hard ring. */
 .aero-button-selected {
   background: linear-gradient(to bottom, #b5f0a5, #7ee787 49%, #3ab85e 50%, #6fdc83);
