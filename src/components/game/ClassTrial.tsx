@@ -140,9 +140,9 @@ export default function ClassTrial({ game }: Props) {
     <div className="w-full h-full flex flex-col overflow-hidden" style={{ backgroundImage: "url('/backgrounds/classroom.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}>
 
       {/* ── HUD row: topic name + timer ──────────────────────────────────── */}
-      <div className="flex items-center justify-between px-3 pt-2 pb-1 shrink-0">
+      <div className="flex items-center justify-between px-5 pt-3 pb-2 shrink-0">
         <span
-          className="text-[0.6rem] font-black tracking-widest uppercase text-[#57c7ff]/70"
+          className="text-[0.85rem] font-black tracking-widest uppercase text-[#57c7ff]/70"
           style={{ textShadow: "0 0 8px #57c7ff" }}
         >
           Class Trial — {game.topic.name}
@@ -166,19 +166,23 @@ export default function ClassTrial({ game }: Props) {
       {/* ── Phase-specific content (flexible centre) ──────────────────────── */}
       <div className="flex-1 min-h-0 flex flex-col">
 
-        {/* Dialogue phases: speaker centered on stage + dialogue box anchored low */}
+        {/* Dialogue phases: big speaker sprite underneath, dialogue box layered on top */}
         {isDialoguePhase && (
-          <>
-            <CharacterStage
-              characters={game.characters}
-              activeSpeakerId={activeSpeakerId}
-            />
+          <div className="relative flex-1 min-h-0 flex flex-col justify-end">
+            {/* Character layer (below) */}
+            <div className="absolute inset-0">
+              <CharacterStage
+                characters={game.characters}
+                activeSpeakerId={activeSpeakerId}
+              />
+            </div>
 
+            {/* Dialogue layer (above the character) */}
             <AnimatePresence mode="wait">
               {currentLine && (
                 <motion.div
                   key={`dialogue-${state.dialogueIndex}-${phase}`}
-                  className="shrink-0"
+                  className="relative z-10 shrink-0"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -194,7 +198,7 @@ export default function ClassTrial({ game }: Props) {
                 </motion.div>
               )}
             </AnimatePresence>
-          </>
+          </div>
         )}
 
         {/* Solving phase — one student speaks, their statement floats over them */}
@@ -239,7 +243,7 @@ export default function ClassTrial({ game }: Props) {
             </div>
 
             {/* Divider */}
-            <div className="mx-3 my-1.5 h-px bg-gradient-to-r from-transparent via-[#57c7ff]/30 to-transparent shrink-0" />
+            <div className="mx-5 my-2.5 h-px bg-gradient-to-r from-transparent via-[#57c7ff]/30 to-transparent shrink-0" />
 
             {/* Bullet inventory */}
             <BulletInventory
@@ -258,7 +262,7 @@ export default function ClassTrial({ game }: Props) {
       {/* ── Phase label watermark (tutorial only; solving shows the timer) ── */}
       {phase === "tutorial" && (
         <div
-          className="absolute top-2 right-3 text-[0.55rem] uppercase tracking-widest font-bold pointer-events-none"
+          className="absolute top-2 right-3 text-xs uppercase tracking-widest font-bold pointer-events-none"
           style={{ color: "rgb(87 199 255 / 0.4)" }}
         >
           Tutorial

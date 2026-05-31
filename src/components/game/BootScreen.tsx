@@ -30,17 +30,17 @@ export default function BootScreen({ onDone }: Props) {
       {/* Retro boot text */}
       <div className="font-mono text-center space-y-2 px-8">
         <p
-          className="text-[#57c7ff] text-xs tracking-widest uppercase"
+          className="text-[#57c7ff] text-base tracking-widest uppercase"
           style={{ animation: "boot-flicker 0.3s steps(1) 0.5s 3" }}
         >
           EduTrial™ OS v2.6
         </p>
-        <p className="text-[#9fe9ff] text-[0.6rem] tracking-widest opacity-70">
+        <p className="text-[#9fe9ff] text-sm tracking-widest opacity-70">
           Academic Debate Engine — Initialising…
         </p>
 
         {/* Loading bar */}
-        <div className="mt-4 w-48 mx-auto h-1.5 rounded-full bg-[#0b2a3a] overflow-hidden border border-[#1a5f9a]">
+        <div className="mt-4 w-72 mx-auto h-2 rounded-full bg-[#0b2a3a] overflow-hidden border border-[#1a5f9a]">
           <motion.div
             className="h-full rounded-full"
             style={{
@@ -56,7 +56,7 @@ export default function BootScreen({ onDone }: Props) {
         {/* Click prompt — only shown after boot */}
         {booted && (
           <motion.p
-            className="mt-8 text-[#9fe9ff] text-sm tracking-wider"
+            className="mt-8 text-[#9fe9ff] text-lg tracking-wider"
             initial={{ opacity: 0 }}
             animate={{ opacity: [0, 1, 0] }}
             transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}

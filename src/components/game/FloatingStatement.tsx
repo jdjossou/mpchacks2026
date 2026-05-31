@@ -12,12 +12,6 @@ interface Props {
   onClick: () => void;
 }
 
-/** Maps speakerId to a color accent (matches the old StatementCard). */
-const SPEAKER_COLOR: Record<string, string> = {
-  studentA: "#7ee787",
-  studentB: "#e08ff0",
-};
-
 /** Pick a random off-screen-ish entry offset so each statement flies in from
  *  a different direction. Stable for the lifetime of one mount. */
 function randomEntryOffset() {
@@ -39,7 +33,6 @@ export default function FloatingStatement({
   lastShotOutcome,
   onClick,
 }: Props) {
-  const accentColor = SPEAKER_COLOR[statement.speakerId] ?? "#9fe9ff";
   // Stable per mount — re-rolls every rotation because the parent re-keys us.
   const [entry] = useState(randomEntryOffset);
 
@@ -50,8 +43,8 @@ export default function FloatingStatement({
     miss: { x: [0, -6, 6, -4, 4, 0], rotate: [0, -3, 3, -2, 2, 0] },
   };
 
-  const cardClasses = [
-    "statement-card",
+  const textClasses = [
+    "flying-statement",
     isTargetable && !isResolved ? "targetable" : "",
     isResolved ? "resolved" : "",
     lastShotOutcome === "hit" ? "hit-flash" : "",
@@ -84,40 +77,20 @@ export default function FloatingStatement({
               : { duration: 0.3 }
           }
         >
-          {/* The card itself */}
-          <div
-            className={cardClasses}
-            onClick={isResolved ? undefined : onClick}
-            style={{ width: "280px", minWidth: "280px" }}
-          >
-            {/* Speaker tag */}
-            <div
-              className="px-3 pt-2.5 pb-0.5 text-[0.6rem] font-black tracking-widest uppercase"
-              style={{ color: accentColor, textShadow: `0 0 6px ${accentColor}` }}
-            >
-              {statement.speakerId === "studentA" ? "Student A" : "Student B"}
-            </div>
-
-            {/* Statement text */}
-            <div className="px-3 pb-3">
-              <p
-                className="text-white text-[0.85rem] leading-snug font-medium"
-                style={{ textShadow: "0 1px 3px rgb(0 0 0 / 0.8)" }}
-              >
-                {statement.text}
-              </p>
-            </div>
+          {/* Box-less, Danganronpa-style statement text */}
+          <div className="relative max-w-[34rem]" onClick={isResolved ? undefined : onClick}>
+            <p className={textClasses}>{statement.text}</p>
 
             {/* CORRECTED stamp */}
             {isResolved && (
               <motion.div
-                className="absolute inset-0 flex items-center justify-center rounded-[0.625rem]"
+                className="absolute inset-0 flex items-center justify-center"
                 initial={{ opacity: 0, scale: 0.7, rotate: -10 }}
                 animate={{ opacity: 1, scale: 1, rotate: -12 }}
                 transition={{ type: "spring", stiffness: 260, damping: 20 }}
               >
                 <div
-                  className="text-[#7ee787] font-black text-xl border-[3px] border-[#7ee787] px-3 py-1 rounded"
+                  className="text-[#7ee787] font-black text-3xl border-[4px] border-[#7ee787] px-5 py-2 rounded"
                   style={{
                     textShadow: "0 0 12px #7ee787",
                     boxShadow: "0 0 16px #7ee787",

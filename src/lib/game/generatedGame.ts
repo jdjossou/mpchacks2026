@@ -81,7 +81,7 @@ export function gameConfigFromParsedDocument(
     characters: [
       {
         id: "teacher",
-        name: "Professor Vale",
+        name: "Mizue Sensei",
         role: "teacher",
         avatar: "/characters/teacher.png",
       },

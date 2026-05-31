@@ -8,14 +8,14 @@ interface Props {
   activeSpeakerId: CharacterId | null;
 }
 
-// Emoji + gradient placeholder per character (real art slots into `character.avatar`).
+// Emoji fallback + animation timing per character (real art slots into `character.avatar`).
 const CHARACTER_STYLE: Record<
   CharacterId,
-  { emoji: string; gradient: string; border: string; bob: number; shake: number }
+  { emoji: string; bob: number; shake: number }
 > = {
-  teacher:  { emoji: "👩‍🏫", gradient: "linear-gradient(135deg, #1a78c2, #2e90d8)", border: "#57c7ff", bob: 2.1, shake: 5.2 },
-  studentA: { emoji: "🧑‍💻", gradient: "linear-gradient(135deg, #3ab85e, #7ee787)", border: "#7ee787", bob: 1.7, shake: 3.8 },
-  studentB: { emoji: "🧑‍🎓", gradient: "linear-gradient(135deg, #c260d4, #e08ff0)", border: "#e08ff0", bob: 1.9, shake: 4.6 },
+  teacher:  { emoji: "👩‍🏫", bob: 2.1, shake: 5.2 },
+  studentA: { emoji: "🧑‍💻", bob: 1.7, shake: 3.8 },
+  studentB: { emoji: "🧑‍🎓", bob: 1.9, shake: 4.6 },
 };
 
 /**
@@ -37,76 +37,53 @@ export default function CharacterStage({ characters, activeSpeakerId }: Props) {
   );
 }
 
-// ─── Centered, animated speaker ─────────────────────────────────────────────
+// ─── Centered, animated speaker — big uncropped sprite ──────────────────────
 function StageAvatar({ character }: { character: Character }) {
   const style = CHARACTER_STYLE[character.id];
-  const dim = 120;
 
   return (
     <motion.div
-      className="flex flex-col items-center gap-1.5"
+      className="flex items-end justify-center h-full"
       initial={{ opacity: 0, y: 48, scale: 0.85 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 36, scale: 0.9 }}
       transition={{ type: "spring", stiffness: 320, damping: 22 }}
+      style={{
+        animation: `character-bob ${style.bob}s ease-in-out infinite, character-shake ${style.shake}s ease-in-out infinite`,
+      }}
     >
-      {/* Speaking indicator */}
-      <span
-        className="text-[#9fe9ff] text-[0.65rem] font-bold tracking-widest uppercase"
-        style={{ textShadow: "0 0 8px #57c7ff" }}
-      >
-        ★ speaking
-      </span>
+      {character.avatar ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={character.avatar}
+          alt={character.name}
+          style={{
+            height: "100%",
+            maxHeight: "clamp(320px, 64vh, 760px)",
+            width: "auto",
+            objectFit: "contain",
+            filter: "drop-shadow(0 8px 18px rgb(0 0 0 / 0.45))",
+          }}
+          onError={(e) => {
+            // Fall back to the emoji if the art file doesn't exist yet.
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+            const sib = e.currentTarget.nextElementSibling as HTMLElement | null;
+            if (sib) sib.style.display = "flex";
+          }}
+        />
+      ) : null}
 
-      {/* Avatar — idle bob + periodic emphatic shake (varies per character) */}
-      <div
+      {/* Large emoji fallback (shown only if there's no art / it fails to load). */}
+      <span
         style={{
-          width: dim,
-          height: dim,
-          position: "relative",
-          borderRadius: "50%",
-          background: style.gradient,
-          border: `3px solid ${style.border}`,
-          boxShadow: `0 0 22px ${style.border}, 0 6px 18px rgb(0 0 0 / 0.45)`,
-          display: "flex",
-          alignItems: "center",
+          display: character.avatar ? "none" : "flex",
+          alignItems: "flex-end",
           justifyContent: "center",
-          fontSize: dim * 0.46,
-          overflow: "hidden",
-          animation: `character-bob ${style.bob}s ease-in-out infinite, character-shake ${style.shake}s ease-in-out infinite`,
+          lineHeight: 1,
+          fontSize: "clamp(180px, 46vh, 520px)",
         }}
       >
-        {/* Emoji placeholder sits behind; real art (if present) covers it. */}
-        <span style={{ position: "absolute" }}>{style.emoji}</span>
-        {character.avatar ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={character.avatar}
-            alt={character.name}
-            width={dim}
-            height={dim}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              borderRadius: "50%",
-              objectFit: "cover",
-            }}
-            onError={(e) => {
-              // Fall back to the emoji if the art file doesn't exist yet.
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-        ) : null}
-      </div>
-
-      {/* Name label */}
-      <span
-        className="text-xs font-semibold tracking-wide"
-        style={{ color: style.border, textShadow: `0 0 8px ${style.border}` }}
-      >
-        {character.name}
+        {style.emoji}
       </span>
     </motion.div>
   );

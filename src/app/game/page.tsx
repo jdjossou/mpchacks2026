@@ -2,7 +2,7 @@ import ComputerFrame from "@/components/game/ComputerFrame";
 import GameFromSession from "@/components/game/GameFromSession";
 
 export const metadata = {
-  title: "Class Trial — EduTrial",
+  title: "Clashroom",
 };
 
 /**

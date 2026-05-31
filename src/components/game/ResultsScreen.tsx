@@ -42,7 +42,7 @@ export default function ResultsScreen({
     >
       {/* Inner stack: my-auto centers it when short, but every edge stays
           reachable when the content is taller than the screen. */}
-      <div className="flex flex-col items-center gap-3 px-4 py-5 my-auto w-full">
+      <div className="flex flex-col items-center gap-4 px-6 py-6 my-auto w-full">
 
       {/* Result banner */}
       <motion.div
@@ -52,7 +52,7 @@ export default function ResultsScreen({
         transition={{ type: "spring", stiffness: 200, damping: 16, delay: 0.2 }}
       >
         <div
-          className="text-4xl font-black tracking-widest uppercase"
+          className="text-5xl font-black tracking-widest uppercase"
           style={{
             color: isWin ? "#7ee787" : "#ff5555",
             textShadow: isWin
@@ -62,7 +62,7 @@ export default function ResultsScreen({
         >
           {isWin ? "✓ Case Closed!" : "✗ Time's Up!"}
         </div>
-        <p className="text-[#9fe9ff] text-xs mt-1 tracking-wide">
+        <p className="text-[#9fe9ff] text-base mt-1 tracking-wide">
           {isWin
             ? "You identified all false claims."
             : "You ran out of time before correcting all mistakes."}
@@ -71,18 +71,18 @@ export default function ResultsScreen({
 
       {/* Score card */}
       <motion.div
-        className="aero-glass w-full max-w-sm p-4"
+        className="aero-glass w-full max-w-lg p-6"
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
         {/* Big score */}
         <div className="text-center mb-3">
-          <p className="text-[0.6rem] text-[#9fe9ff]/70 uppercase tracking-widest mb-0.5">
+          <p className="text-xs text-[#9fe9ff]/70 uppercase tracking-widest mb-0.5">
             Final Score
           </p>
           <motion.p
-            className="text-5xl font-black"
+            className="text-6xl font-black"
             style={{
               color: isWin ? "#7ee787" : "#ffd07a",
               textShadow: isWin ? "0 0 16px #7ee787" : "0 0 16px #ffd07a",
@@ -97,7 +97,7 @@ export default function ResultsScreen({
         </div>
 
         {/* Score breakdown */}
-        <div className="space-y-1.5 border-t border-white/20 pt-3">
+        <div className="space-y-2 border-t border-white/20 pt-4">
           <ScoreLine label="Statements Corrected" value={`${solved} / ${total}`} positive />
           {isWin && (
             <ScoreLine
@@ -128,15 +128,15 @@ export default function ResultsScreen({
 
       {/* Bullet explanations */}
       <motion.div
-        className="w-full max-w-sm"
+        className="w-full max-w-lg"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.9 }}
       >
-        <p className="text-[0.6rem] text-[#9fe9ff]/70 uppercase tracking-widest mb-1.5">
+        <p className="text-xs text-[#9fe9ff]/70 uppercase tracking-widest mb-2">
           Bullet Explanations
         </p>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {config.debate.answers.map((bullet) => {
             const target = config.debate.statements.find(
               (s) => s.id === bullet.targetsStatementId
@@ -144,7 +144,7 @@ export default function ResultsScreen({
             return (
               <div
                 key={bullet.id}
-                className="aero-glass-dark px-3 py-2 text-xs"
+                className="aero-glass-dark px-4 py-3 text-base"
                 style={{ borderRadius: "0.5rem" }}
               >
                 <p className="font-semibold text-[#9fe9ff] mb-0.5">
@@ -152,7 +152,7 @@ export default function ResultsScreen({
                   {bullet.text}
                 </p>
                 {target && (
-                  <p className="text-white/60 text-[0.65rem] italic">
+                  <p className="text-white/60 text-sm italic">
                     {`Corrects: "${target.text.slice(0, 60)}..."`}
                   </p>
                 )}
@@ -165,7 +165,7 @@ export default function ResultsScreen({
 
       {/* Play again */}
       <motion.button
-        className="aero-button px-8 py-2.5 text-sm font-bold tracking-wide mt-2"
+        className="aero-button px-10 py-3 text-base font-bold tracking-wide mt-2"
         onClick={onReset}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -192,7 +192,7 @@ function ScoreLine({
   positive: boolean;
 }) {
   return (
-    <div className="flex justify-between items-center text-xs">
+    <div className="flex justify-between items-center text-base">
       <span className="text-white/70">{label}</span>
       <span
         className="font-bold tabular-nums"

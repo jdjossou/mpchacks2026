@@ -24,7 +24,7 @@ export default function BulletChip({ bullet, isSelected, isUsed, onClick }: Prop
         "aero-button",
         isSelected ? "aero-button-selected" : "",
         isUsed ? "opacity-35 cursor-not-allowed grayscale" : "",
-        "relative px-3 py-1.5 text-left w-full",
+        "relative px-4 py-3 text-left w-full",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -33,13 +33,13 @@ export default function BulletChip({ bullet, isSelected, isUsed, onClick }: Prop
       aria-pressed={isSelected}
     >
       {/* Bullet icon */}
-      <span className="mr-1.5 text-xs" aria-hidden="true">
+      <span className="mr-1.5 text-base" aria-hidden="true">
         {isUsed ? "✕" : isSelected ? "◆" : "◇"}
       </span>
 
       {/* Truncated text */}
       <span
-        className="text-xs font-semibold leading-tight block overflow-hidden"
+        className="text-base font-semibold leading-tight block overflow-hidden"
         style={{
           display: "-webkit-box",
           WebkitLineClamp: 2,
@@ -53,7 +53,7 @@ export default function BulletChip({ bullet, isSelected, isUsed, onClick }: Prop
       {/* "Used" stamp overlay */}
       {isUsed && (
         <div className="absolute inset-0 flex items-center justify-center rounded-[0.5rem] bg-black/20">
-          <span className="text-[0.55rem] font-black tracking-widest text-white/60 uppercase rotate-[-12deg]">
+          <span className="text-xs font-black tracking-widest text-white/60 uppercase rotate-[-12deg]">
             Used
           </span>
         </div>

@@ -20,20 +20,20 @@ export default function BulletInventory({
   onSelect,
 }: Props) {
   return (
-    <div className="mx-3 mb-2">
+    <div className="mx-5 mb-4">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-[0.6rem] font-black tracking-widest text-[#9fe9ff] uppercase">
+      <div className="flex items-center gap-2 mb-2.5">
+        <span className="text-[0.8rem] font-black tracking-widest text-[#9fe9ff] uppercase">
           Truth Bullets
         </span>
         <div className="flex-1 h-px bg-gradient-to-r from-[#57c7ff]/50 to-transparent" />
-        <span className="text-[0.55rem] text-[#9fe9ff]/60 italic">
+        <span className="text-xs text-[#9fe9ff]/60 italic">
           Select a bullet, then click a statement
         </span>
       </div>
 
       {/* Bullet chips */}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-3 gap-2.5">
         {bullets.map((b) => (
           <BulletChip
             key={b.id}
