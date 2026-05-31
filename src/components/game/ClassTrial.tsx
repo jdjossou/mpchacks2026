@@ -173,7 +173,7 @@ export default function ClassTrial({ game }: Props) {
   const activeStatement = game.debate.statements[state.activeStatementIndex];
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden" style={{ backgroundImage: "url('/backgrounds/classroom.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}>
+    <div className="w-full h-full flex flex-col overflow-hidden select-none" style={{ backgroundImage: "url('/backgrounds/classroom.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}>
 
       {/* ── HUD row: topic name + timer ──────────────────────────────────── */}
       <div className="flex items-center justify-between px-5 pt-3 pb-2 shrink-0">
@@ -277,9 +277,6 @@ export default function ClassTrial({ game }: Props) {
                         ? state.lastShot.outcome
                         : null
                     }
-                    onClick={() =>
-                      dispatch({ type: "FIRE_AT", statementId: activeStatement.id })
-                    }
                   />
                 </AnimatePresence>
               </div>
@@ -291,10 +288,15 @@ export default function ClassTrial({ game }: Props) {
             {/* Bullet inventory */}
             <BulletInventory
               bullets={game.debate.answers}
-              selectedBulletId={state.selectedBulletId}
               usedBullets={state.usedBullets}
-              onSelect={(bulletId) =>
+              onDragStartBullet={(bulletId) =>
                 dispatch({ type: "SELECT_BULLET", bulletId })
+              }
+              onDragCancel={() =>
+                dispatch({ type: "SELECT_BULLET", bulletId: null })
+              }
+              onFire={(statementId, bulletId) =>
+                dispatch({ type: "FIRE_AT", statementId, bulletId })
               }
             />
           </motion.div>

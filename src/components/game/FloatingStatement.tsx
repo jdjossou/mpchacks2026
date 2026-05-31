@@ -6,10 +6,9 @@ import type { DebateStatement } from "@/lib/game/gameTypes";
 
 interface Props {
   statement: DebateStatement;
-  isTargetable: boolean; // a bullet is selected and this statement isn't resolved
+  isTargetable: boolean; // a bullet is being dragged and this statement isn't resolved
   isResolved: boolean; // already correctly refuted
   lastShotOutcome: "hit" | "miss" | null; // transient flash state
-  onClick: () => void;
 }
 
 function rand(min: number, max: number) {
@@ -112,15 +111,15 @@ function rollMotion() {
 /**
  * A single debate statement that flies in over the speaker, Danganronpa-style.
  * It rests in a varied off-center zone (never on the face), enters from a varied
- * direction, gently drifts and tilts in place, then drifts away on exit. The
- * whole card is clickable: hit it anywhere to fire the selected Truth Bullet.
+ * direction, gently drifts and tilts in place, then drifts away on exit. It acts
+ * as a drop target: release a dragged Truth Bullet over it to fire (the inventory
+ * hit-tests via the `data-statement-drop-id` attribute below).
  */
 export default function FloatingStatement({
   statement,
   isTargetable,
   isResolved,
   lastShotOutcome,
-  onClick,
 }: Props) {
   // Stable per mount — re-rolls every rotation because the parent re-keys us.
   const [m] = useState(rollMotion);
@@ -164,8 +163,13 @@ export default function FloatingStatement({
                 : { duration: 0.3 }
             }
           >
-            {/* Box-less, Danganronpa-style statement text */}
-            <div className="relative w-[min(28rem,72vw)]" onClick={isResolved ? undefined : onClick}>
+            {/* Box-less, Danganronpa-style statement text. While it's a valid
+                target, expose a drop id so the inventory can hit-test a dropped
+                Truth Bullet against it. */}
+            <div
+              className="relative w-[min(28rem,72vw)]"
+              data-statement-drop-id={isResolved ? undefined : statement.id}
+            >
               <p className={textClasses}>{statement.text}</p>
 
               {/* CORRECTED stamp */}

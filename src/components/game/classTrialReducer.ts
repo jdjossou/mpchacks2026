@@ -58,8 +58,8 @@ export type Action =
   | { type: "SKIP_TUTORIAL" }
   | { type: "START_SOLVING" }
   | { type: "NEXT_STATEMENT" }
-  | { type: "SELECT_BULLET"; bulletId: string }
-  | { type: "FIRE_AT"; statementId: string }
+  | { type: "SELECT_BULLET"; bulletId: string | null }
+  | { type: "FIRE_AT"; statementId: string; bulletId: string }
   | { type: "TICK" }
   | { type: "CLEAR_LAST_SHOT" }
   | { type: "ENTER_WIN_CONCLUSION" }
@@ -234,25 +234,27 @@ export function classTrialReducer(
       return { ...state, timeLeft: newTime };
     }
 
-    // ── Select / deselect a bullet ────────────────────────────────────────
+    // ── Set / clear the active (dragging) bullet ──────────────────────────
+    // Drives the statement's "targetable" glow + the select sound while a card
+    // is in flight. `bulletId: null` clears it (drag cancelled / dropped on air).
     case "SELECT_BULLET": {
-      if (state.usedBullets[action.bulletId]) return state; // already consumed
-      const sameSelected = state.selectedBulletId === action.bulletId;
+      if (action.bulletId && state.usedBullets[action.bulletId]) return state; // already consumed
       return {
         ...state,
-        selectedBulletId: sameSelected ? null : action.bulletId,
+        selectedBulletId: action.bulletId,
       };
     }
 
     // ── Fire a bullet at a statement ──────────────────────────────────────
     case "FIRE_AT": {
-      const { statementId } = action;
-      const { selectedBulletId } = state;
+      const { statementId, bulletId: selectedBulletId } = action;
 
-      // Guard: must have a bullet selected
+      // Guard: must carry a bullet
       if (!selectedBulletId) return state;
       // Guard: already resolved
       if (state.resolvedStatements[statementId]) return state;
+      // Guard: bullet already consumed
+      if (state.usedBullets[selectedBulletId]) return state;
 
       const bullet = config.debate.answers.find((b) => b.id === selectedBulletId);
       const stmt   = config.debate.statements.find((s) => s.id === statementId);
