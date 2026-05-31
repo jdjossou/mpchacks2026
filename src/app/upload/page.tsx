@@ -18,6 +18,7 @@ import {
 } from '@/lib/parsing/actions';
 import {
   GENERATED_GAME_STORAGE_KEY,
+  gameConfigFromParsedDocument,
   type GeneratedGameStoragePayload,
 } from '@/lib/game/generatedGame';
 import { playSound } from '@/lib/sound';
@@ -30,6 +31,14 @@ import {
 } from '@/lib/voiceActingSettings';
 import { PREMADE_LEVELS } from '@/lib/game/premadeLevels';
 import type { GameConfig } from '@/lib/game/gameTypes';
+
+function getDialogueText(value: unknown): string | null {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return null;
+
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.text === 'string' ? candidate.text : null;
+}
 
 export default function Home() {
   const router = useRouter();
@@ -83,7 +92,10 @@ export default function Home() {
     if (!candidate || typeof candidate !== 'object') return payload;
 
     const fields = candidate as Record<string, unknown>;
-    if (typeof fields.intro !== 'string' || typeof fields.conclusion !== 'string') {
+    const intro = getDialogueText(fields.intro);
+    const conclusion = getDialogueText(fields.conclusion);
+
+    if (!intro || !conclusion) {
       return payload;
     }
 
@@ -91,8 +103,8 @@ export default function Home() {
 
     try {
       const response = await generateTeacherVoiceoversAction({
-        intro: fields.intro,
-        conclusion: fields.conclusion,
+        intro,
+        conclusion,
       });
 
       if (!response.success) {
@@ -227,6 +239,9 @@ export default function Home() {
     }
 
     setIsParsing(true);
+    setHasLoadedGame(false);
+    sessionStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
+    localStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
     setCurrentMessage('Loading level data...');
 
     try {
@@ -255,8 +270,10 @@ export default function Home() {
         throw new Error(`Invalid .clashroom level file: "debate" must be an object containing "statements" array.`);
       }
 
+      const gameConfig = gameConfigFromParsedDocument(structuredJson, selectedFile.name);
+
       const responseData: GeneratedGameStoragePayload = {
-        json: structuredJson,
+        json: gameConfig,
         version: 'unknown',
         size: selectedFile.size,
         name: selectedFile.name,
@@ -264,6 +281,7 @@ export default function Home() {
 
       const enrichedResponseData = await addTeacherVoiceovers(responseData);
       sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(enrichedResponseData));
+      localStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(enrichedResponseData));
       setHasLoadedGame(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to parse .clashroom level file.');
@@ -278,6 +296,9 @@ export default function Home() {
     if (!fileToParse) return;
     setIsParsing(true);
     setError(null);
+    setHasLoadedGame(false);
+    sessionStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
+    localStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
 
     const defaultMsg = 'AI Structuring in Progress';
     let activeInterval: NodeJS.Timeout | null = null;
@@ -350,16 +371,20 @@ export default function Home() {
     },
     {
       id: 'play_upload',
-      name: hasLoadedGame ? 'Play' : 'Upload Level',
+      name: 'Upload Level',
       onClick: () => {
         playSound('menu_select');
-        if (hasLoadedGame) {
-          router.push('/game');
-        } else {
-          handleUploadClick();
-        }
+        handleUploadClick();
       }
     },
+    ...(hasLoadedGame ? [{
+      id: 'play_loaded',
+      name: 'Play',
+      onClick: () => {
+        playSound('menu_select');
+        router.push('/game');
+      }
+    }] : []),
     ...(hasLoadedGame ? [{
       id: 'unload',
       name: 'Unload Level',

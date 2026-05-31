@@ -1,4 +1,4 @@
-import type { GameConfig } from "./gameTypes";
+import type { Character, CharacterId, GameConfig } from "./gameTypes";
 import type { TeacherVoiceovers } from "@/lib/voice/elevenLabs";
 
 export const GENERATED_GAME_STORAGE_KEY = "clashroom:generated-game:v1";
@@ -39,6 +39,35 @@ const REQUIRED_FIELDS = [
   "conclusion",
 ] as const satisfies readonly (keyof ParsedDocumentGameJson)[];
 
+const DEFAULT_CHARACTERS: Record<CharacterId, Character> = {
+  teacher: {
+    id: "teacher",
+    name: "Professor Vale",
+    role: "teacher",
+    avatar: "/characters/teacher.png",
+  },
+  mascot: {
+    id: "mascot",
+    name: "TUTO-SAN",
+    role: "mascot",
+    avatar: "/characters/mascot.png",
+  },
+  studentA: {
+    id: "studentA",
+    name: "Mika",
+    role: "student",
+    avatar: "/characters/studentA.png",
+  },
+  studentB: {
+    id: "studentB",
+    name: "Ren",
+    role: "student",
+    avatar: "/characters/studentB.png",
+  },
+};
+
+const CHARACTER_ORDER = ["teacher", "mascot", "studentA", "studentB"] as const;
+
 function requireParsedDocumentJson(value: unknown): ParsedDocumentGameJson {
   if (!value || typeof value !== "object") {
     throw new Error("Generated game JSON must be an object.");
@@ -54,6 +83,35 @@ function requireParsedDocumentJson(value: unknown): ParsedDocumentGameJson {
   return candidate as ParsedDocumentGameJson;
 }
 
+function normalizeCharacters(value: unknown): Character[] {
+  const candidates = Array.isArray(value) ? value : [];
+  const byId = new Map<CharacterId, Partial<Character>>();
+
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+
+    const character = candidate as Record<string, unknown>;
+    if (!CHARACTER_ORDER.includes(character.id as CharacterId)) continue;
+
+    byId.set(character.id as CharacterId, character as Partial<Character>);
+  }
+
+  return CHARACTER_ORDER.map((id) => {
+    const current = byId.get(id);
+    const fallback = DEFAULT_CHARACTERS[id];
+
+    return {
+      ...fallback,
+      name:
+        typeof current?.name === "string" && current.name.trim()
+          ? current.name
+          : fallback.name,
+      role: fallback.role,
+      avatar: fallback.avatar,
+    };
+  });
+}
+
 export function slugify(value: string): string {
   const slug = value
     .toLowerCase()
@@ -62,6 +120,24 @@ export function slugify(value: string): string {
     .slice(0, 48);
 
   return slug || "generated";
+}
+
+function normalizeGameConfig(
+  game: GameConfig,
+  voiceovers?: TeacherVoiceovers
+): GameConfig {
+  return {
+    ...game,
+    characters: normalizeCharacters(game.characters),
+    intro: {
+      ...game.intro,
+      audioUrl: voiceovers?.introAudioUrl ?? game.intro.audioUrl,
+    },
+    conclusion: {
+      ...game.conclusion,
+      audioUrl: voiceovers?.conclusionAudioUrl ?? game.conclusion.audioUrl,
+    },
+  };
 }
 
 export function gameConfigFromParsedDocument(
@@ -78,7 +154,7 @@ export function gameConfigFromParsedDocument(
     "debate" in value &&
     "conclusion" in value
   ) {
-    return value as GameConfig;
+    return normalizeGameConfig(value as GameConfig, voiceovers);
   }
 
   const json = requireParsedDocumentJson(value);
