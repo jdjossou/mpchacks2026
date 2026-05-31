@@ -9,6 +9,7 @@ import {
   makeInitialState,
   type Action,
 } from "./classTrialReducer";
+import { playSound } from "@/lib/sound";
 
 import BootScreen        from "./BootScreen";
 import CharacterStage    from "./CharacterStage";
@@ -55,6 +56,33 @@ export default function ClassTrial({ game }: Props) {
     const id = setTimeout(() => dispatch({ type: "CLEAR_LAST_SHOT" }), 650);
     return () => clearTimeout(id);
   }, [state.lastShot, dispatch]);
+
+  // ── Sound: selecting a Truth Bullet ───────────────────────────────────
+  useEffect(() => {
+    if (state.selectedBulletId) playSound("answer_select");
+  }, [state.selectedBulletId]);
+
+  // ── Sound: firing a bullet (shoot, plus a correct chime on a hit) ──────
+  useEffect(() => {
+    if (!state.lastShot) return;
+    playSound("answer_shoot");
+    if (state.lastShot.outcome === "hit") {
+      const id = setTimeout(() => playSound("correct_answer"), 180);
+      return () => clearTimeout(id);
+    }
+  }, [state.lastShot]);
+
+  // ── Sound: win fanfare (fires the moment the final claim is corrected) ─
+  useEffect(() => {
+    if (state.pendingWin) playSound("game_win");
+  }, [state.pendingWin]);
+
+  // ── Sound: lose sting (timer ran out) ─────────────────────────────────
+  useEffect(() => {
+    if (state.phase === "results" && state.outcome === "fail") {
+      playSound("game_lose");
+    }
+  }, [state.phase, state.outcome]);
 
   // ── Debate rotation: cycle to the next statement on a steady beat ──────
   useEffect(() => {

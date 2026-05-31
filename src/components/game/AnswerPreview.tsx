@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { AnswerBullet } from "@/lib/game/gameTypes";
+import { playSound } from "@/lib/sound";
 
 interface Props {
   bullets: AnswerBullet[];
@@ -76,7 +77,10 @@ export default function AnswerPreview({ bullets, onStart }: Props) {
           className="aero-button aero-button-selected px-6 py-3 text-base font-black tracking-widest uppercase self-center"
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.96 }}
-          onClick={onStart}
+          onClick={() => {
+            playSound("menu_select");
+            onStart();
+          }}
         >
           ▶ Start Debate
         </motion.button>

@@ -6,6 +6,7 @@ import type { GameConfig } from "@/lib/game/gameTypes";
 import { finalScore, SCORE_BASE, SCORE_HIT, SCORE_TIME_BONUS } from "@/lib/game/scoring";
 import { solvedCount } from "@/lib/game/selectors";
 import { slugify } from "@/lib/game/generatedGame";
+import { playSound } from "@/lib/sound";
 
 interface Props {
   config: GameConfig;
@@ -36,6 +37,7 @@ export default function ResultsScreen({
 
   // Export the full game definition as a .clashroom file (JSON under the hood).
   function handleDownload() {
+    playSound("menu_select");
     const json = JSON.stringify(config, null, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -247,7 +249,10 @@ export default function ResultsScreen({
       >
         <motion.button
           className="aero-button px-8 py-2 text-sm font-bold tracking-wide"
-          onClick={onReset}
+          onClick={() => {
+            playSound("menu_select");
+            onReset();
+          }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.97 }}
         >
@@ -259,7 +264,7 @@ export default function ResultsScreen({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.97 }}
         >
-          ⬇ Save .clashroom
+          ⬇ Save
         </motion.button>
       </motion.div>
 

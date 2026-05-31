@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { parsePDFAction, parseImageAction, parseTextAction, getLoadingMessagesAction } from '@/lib/parsing/actions';
 import { GENERATED_GAME_STORAGE_KEY } from '@/lib/game/generatedGame';
+import { playSound } from '@/lib/sound';
 
 const GOOFY_GREETINGS = [
   "FEED ME FILES! I consume knowledge and spit out gaming! 👁️👄👁️",
@@ -322,11 +323,18 @@ export default function Home() {
                           <motion.button
                             key={index === 1 ? 'upload-play' : item.name}
                             onClick={
-                              index === 1 
-                                ? (hasLoadedGame ? () => router.push('/game') : handleUploadClick)
+                              index === 1
+                                ? () => {
+                                    playSound('menu_select');
+                                    if (hasLoadedGame) router.push('/game');
+                                    else handleUploadClick();
+                                  }
                                 : undefined
                             }
-                            onMouseEnter={() => setHoveredIndex(index)}
+                            onMouseEnter={() => {
+                              if (isActive) playSound('menu_hover');
+                              setHoveredIndex(index);
+                            }}
                             onMouseLeave={() => setHoveredIndex(null)}
                             whileTap={isActive ? { scale: 0.98 } : undefined}
                             animate={{
