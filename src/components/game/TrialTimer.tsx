@@ -25,19 +25,8 @@ export default function TrialTimer({ timeLeft }: Props) {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Clock icon */}
-      <span
-        className="text-2xl"
-        style={{
-          filter: urgent ? "drop-shadow(0 0 6px #ff5555)" : "none",
-          transition: "filter 0.3s",
-        }}
-      >
-        ⏱
-      </span>
-
       <motion.span
-        className={`timer-display text-3xl font-bold tabular-nums ${urgent ? "timer-urgent" : "text-[#9fe9ff]"}`}
+        className={`timer-display text-6xl font-bold tabular-nums px-4 py-2 ${urgent ? "timer-urgent" : "text-[#9fe9ff]"}`}
         style={{
           textShadow: urgent ? "0 0 12px #ff5555" : "0 0 10px #57c7ff",
           fontFamily: "var(--font-mono)",
