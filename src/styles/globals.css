@@ -11,14 +11,14 @@
   --color-aero-aqua: #57c7ff;
   --color-aero-cyan: #9fe9ff;
   --color-aero-ink:  #0b2a3a;
-  --font-sans: 'Convection', 'Segoe UI', var(--font-geist-sans), sans-serif;
+  --font-sans: var(--font-noto-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Convection', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-noto-sans), sans-serif;
 }
 
 /* Frutiger Aero Design System */
