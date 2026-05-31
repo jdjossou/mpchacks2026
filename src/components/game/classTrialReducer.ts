@@ -9,6 +9,7 @@ export const TIME_MISS_PENALTY_SECONDS = 10;
 export type Phase =
   | "intro"            // teacher: data-driven topic intro
   | "tutorial"         // mascot: hard-coded mechanics explanation
+  | "debateStart"      // camera pan from teacher side to student debate side
   | "solving"          // interactive: a student speaks a statement, timer running
   | "winConclusion"    // teacher conclusion line after win
   | "results";         // success/fail summary screen
@@ -157,9 +158,15 @@ export function classTrialReducer(
         };
       }
 
-      // End of intro → start the debate
+      // End of intro → pan across the room before the debate timer starts
       if (state.phase === "intro") {
-        return classTrialReducer(state, { type: "START_SOLVING" }, config);
+        return {
+          ...state,
+          phase: "debateStart",
+          dialogueScript: [],
+          dialogueIndex: 0,
+          isLineComplete: false,
+        };
       }
 
       // End of winConclusion → results (success)

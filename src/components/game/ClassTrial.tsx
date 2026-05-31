@@ -12,7 +12,7 @@ import {
 import { playSound } from "@/lib/sound";
 import { playMusic, stopMusic, type MusicName } from "@/lib/music";
 
-import CharacterStage    from "./CharacterStage";
+import ClassroomScene, { CAMERA_PAN_SECONDS } from "./ClassroomScene";
 import DialogueBox       from "./DialogueBox";
 import TrialTimer        from "./TrialTimer";
 import BulletInventory   from "./BulletInventory";
@@ -22,6 +22,7 @@ import ResultsScreen     from "./ResultsScreen";
 // How long each statement stays on stage before the debate rotates to the next.
 const STATEMENT_WINDOW_MS = 5000;
 const TIMEOUT_PENALTY_RESULT_DELAY_MS = 800;
+const START_OVERLAY_MS = 1600;
 
 interface Props {
   game: GameConfig;
@@ -99,6 +100,16 @@ export default function ClassTrial({ game }: Props) {
   // Stop the music when leaving the game (unmount only).
   useEffect(() => () => stopMusic(), []);
 
+  // ── Pre-debate camera pan: right-side intro → left-side student view ───
+  useEffect(() => {
+    if (state.phase !== "debateStart") return;
+    const id = setTimeout(
+      () => dispatch({ type: "START_SOLVING" }),
+      CAMERA_PAN_SECONDS * 1000 + START_OVERLAY_MS
+    );
+    return () => clearTimeout(id);
+  }, [state.phase, dispatch]);
+
   // ── Debate rotation: cycle to the next statement on a steady beat ──────
   useEffect(() => {
     if (state.phase !== "solving" || state.pendingTimeoutFail) return;
@@ -144,10 +155,13 @@ export default function ClassTrial({ game }: Props) {
     return () => clearTimeout(id);
   }, [state.pendingTimeoutFail, dispatch]);
 
-  // ─── Derive the active speaker for CharacterStage ─────────────────────
+  // ─── Derive the active speaker for the classroom scene ────────────────
   const activeSpeakerId = (() => {
-    if (state.phase === "intro" || state.phase === "tutorial" ||
-        state.phase === "winConclusion") {
+    if (
+      state.phase === "intro" ||
+      state.phase === "tutorial" ||
+      state.phase === "winConclusion"
+    ) {
       const line = state.dialogueScript[state.dialogueIndex];
       return line?.speakerId ?? null;
     }
@@ -184,14 +198,19 @@ export default function ClassTrial({ game }: Props) {
   const activeStatement = game.debate.statements[state.activeStatementIndex];
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden select-none" style={{ backgroundImage: "url('/backgrounds/classroom.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}>
+    <div className="relative w-full h-full flex flex-col overflow-hidden select-none">
+      <ClassroomScene
+        characters={game.characters}
+        activeSpeakerId={activeSpeakerId}
+        phase={phase}
+      />
 
       {/* ── HUD row: topic name + timer ──────────────────────────────────── */}
       {/* Top-aligned: the timer (text-6xl, solving only) is far taller than the
           title, so `items-center` would re-center — and thus vertically shift —
           the title each time the timer mounts/unmounts between phases. Anchoring
           to the top pins the title's Y regardless of the timer. */}
-      <div className="flex items-start justify-between px-5 pt-3 pb-2 shrink-0">
+      <div className="relative z-20 flex items-start justify-between px-5 pt-3 pb-2 shrink-0">
         <span
           className="text-[0.85rem] font-black tracking-widest uppercase text-[#57c7ff]/70"
           style={{ textShadow: "0 0 8px #57c7ff" }}
@@ -215,19 +234,11 @@ export default function ClassTrial({ game }: Props) {
       </div>
 
       {/* ── Phase-specific content (flexible centre) ──────────────────────── */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col">
 
         {/* Dialogue phases: big speaker sprite underneath, dialogue box layered on top */}
         {isDialoguePhase && (
           <div className="relative flex-1 min-h-0 flex flex-col justify-end">
-            {/* Character layer (below) */}
-            <div className="absolute inset-0">
-              <CharacterStage
-                characters={game.characters}
-                activeSpeakerId={activeSpeakerId}
-              />
-            </div>
-
             {/* Dialogue layer (above the character) */}
             <AnimatePresence mode="wait">
               {currentLine && (
@@ -259,6 +270,39 @@ export default function ClassTrial({ game }: Props) {
           </div>
         )}
 
+        {/* Pre-debate pan: students are already in the scene and enter frame
+            because the camera reaches them, not because they animate in. */}
+        {phase === "debateStart" && (
+          <div className="relative flex-1 min-h-0">
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              initial={{ opacity: 0, scale: 0.68, rotate: -4 }}
+              animate={{
+                opacity: [0, 1, 1, 0],
+                scale: [0.68, 1.18, 1, 0.96],
+                rotate: [-4, 2, 0, 0],
+              }}
+              transition={{
+                duration: START_OVERLAY_MS / 1000,
+                delay: CAMERA_PAN_SECONDS,
+                times: [0, 0.25, 0.78, 1],
+                ease: "easeOut",
+              }}
+            >
+              <div
+                className="text-6xl md:text-8xl font-black tracking-widest text-[#7ee787]"
+                style={{
+                  WebkitTextStroke: "3px #06120d",
+                  textShadow:
+                    "0 0 14px rgb(126 231 135 / 0.95), 0 0 28px rgb(87 199 255 / 0.75), 0 5px 0 rgb(0 0 0 / 0.55)",
+                }}
+              >
+                START!
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {/* Solving phase — one student speaks, their statement floats over them */}
         {phase === "solving" && activeStatement && (
           <motion.div
@@ -270,13 +314,6 @@ export default function ClassTrial({ game }: Props) {
           >
             {/* Stage: speaker in the background, statement card flying over them */}
             <div className="relative flex-1 min-h-0">
-              <div className="absolute inset-0">
-                <CharacterStage
-                  characters={game.characters}
-                  activeSpeakerId={activeSpeakerId}
-                />
-              </div>
-
               <div className="absolute inset-0 px-4 pointer-events-none">
                 <AnimatePresence mode="wait">
                   <FloatingStatement
