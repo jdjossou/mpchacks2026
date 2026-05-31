@@ -5,12 +5,15 @@
  * union below is the only mapping needed. We cache one `HTMLAudioElement` per
  * sound and rewind it on replay — fine for short, non-overlapping cues.
  */
+import { isMuted } from "./audioSettings";
+
 export type SoundName =
   | "menu_hover"
   | "menu_select"
   | "answer_select"
   | "answer_shoot"
   | "correct_answer"
+  | "wrong_answer"
   | "game_win"
   | "game_lose";
 
@@ -18,6 +21,7 @@ const cache: Partial<Record<SoundName, HTMLAudioElement>> = {};
 
 export function playSound(name: SoundName, volume = 0.6) {
   if (typeof window === "undefined") return;
+  if (isMuted()) return;
   try {
     let a = cache[name];
     if (!a) {

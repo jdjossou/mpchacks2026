@@ -10,6 +10,7 @@ import {
 import { parsePDFAction, parseImageAction, parseTextAction, getLoadingMessagesAction } from '@/lib/parsing/actions';
 import { GENERATED_GAME_STORAGE_KEY } from '@/lib/game/generatedGame';
 import { playSound } from '@/lib/sound';
+import { playMusic } from '@/lib/music';
 
 const GOOFY_GREETINGS = [
   "FEED ME FILES! I consume knowledge and spit out gaming! 👁️👄👁️",
@@ -35,6 +36,11 @@ export default function Home() {
   const [speechIndex, setSpeechIndex] = useState<number>(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Loop the landing-page theme while on this screen
+  useEffect(() => {
+    playMusic('landing_page');
+  }, []);
 
   // Load loading messages on mount
   useEffect(() => {

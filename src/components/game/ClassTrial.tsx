@@ -10,6 +10,7 @@ import {
   type Action,
 } from "./classTrialReducer";
 import { playSound } from "@/lib/sound";
+import { playMusic, stopMusic, type MusicName } from "@/lib/music";
 
 import BootScreen        from "./BootScreen";
 import CharacterStage    from "./CharacterStage";
@@ -66,10 +67,9 @@ export default function ClassTrial({ game }: Props) {
   useEffect(() => {
     if (!state.lastShot) return;
     playSound("answer_shoot");
-    if (state.lastShot.outcome === "hit") {
-      const id = setTimeout(() => playSound("correct_answer"), 180);
-      return () => clearTimeout(id);
-    }
+    const cue = state.lastShot.outcome === "hit" ? "correct_answer" : "wrong_answer";
+    const id = setTimeout(() => playSound(cue), 180);
+    return () => clearTimeout(id);
   }, [state.lastShot]);
 
   // ── Sound: win fanfare (fires the moment the final claim is corrected) ─
@@ -83,6 +83,23 @@ export default function ClassTrial({ game }: Props) {
       playSound("game_lose");
     }
   }, [state.phase, state.outcome]);
+
+  // ── Music: narrative-split background track per phase ─────────────────
+  // Pre-debate phases share the tutorial theme; the debate onward uses the
+  // game theme. playMusic no-ops when the track is unchanged, so this only
+  // switches once (at `solving`) — no restart between the tutorial phases.
+  useEffect(() => {
+    const track: MusicName =
+      state.phase === "solving" ||
+      state.phase === "winConclusion" ||
+      state.phase === "results"
+        ? "game"
+        : "tutorial";
+    playMusic(track);
+  }, [state.phase]);
+
+  // Stop the music when leaving the game (unmount only).
+  useEffect(() => () => stopMusic(), []);
 
   // ── Debate rotation: cycle to the next statement on a steady beat ──────
   useEffect(() => {
