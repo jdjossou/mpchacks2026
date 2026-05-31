@@ -10,6 +10,16 @@ import {
 import { parsePDFAction, parseImageAction, parseTextAction, getLoadingMessagesAction } from '@/lib/parsing/actions';
 import { GENERATED_GAME_STORAGE_KEY } from '@/lib/game/generatedGame';
 
+const GOOFY_GREETINGS = [
+  "FEED ME FILES! I consume knowledge and spit out gaming! 👁️👄👁️",
+  "Goooood day! Ready to crash some learning? Let's go! 💥📚",
+  "Beep boop! If you drop a level JSON, I promise not to eat it... mostly. 🤖",
+  "I'm Mizue! I'm here to review your papers and judge your decisions! 📐🏫",
+  "Got a PDF? A text file? A JPEG of your homework? Chuck it in!",
+  "Oops! Did you click me? That tickles! 😆✨",
+  "Don't worry, the grade I give you is only 90% based on my mood! 👩‍🏫"
+];
+
 export default function Home() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -20,8 +30,8 @@ export default function Home() {
   const [currentMessage, setCurrentMessage] = useState<string>('AI Structuring in Progress');
   const [showSecret, setShowSecret] = useState<boolean>(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-
   const [hasLoadedGame, setHasLoadedGame] = useState<boolean>(false);
+  const [speechIndex, setSpeechIndex] = useState<number>(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,6 +45,14 @@ export default function Home() {
     if (saved) {
       setHasLoadedGame(true);
     }
+  }, []);
+
+  // Auto-cycle mascot speech bubbles
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length);
+    }, 10000);
+    return () => clearInterval(timer);
   }, []);
 
   // File size formatter
@@ -389,28 +407,54 @@ export default function Home() {
             </AnimatePresence>
           </div>
 
-          {/* RIGHT HALF: FLOATING MASCOT */}
-          <div className="flex flex-col w-full h-full min-h-[650px]">
+          {/* RIGHT HALF: FLOATING MASCOT WITH SPEECH BUBBLE */}
+          <div className="flex flex-col w-full h-full min-h-[500px] items-center justify-center relative">
+            
+            {/* Glowing background aura */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-sky-400/20 blur-3xl pointer-events-none animate-pulse z-0" />
 
-            {/* Mascot */}
-            <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-              <div className="relative z-10 flex items-center justify-center h-full w-full">
-                <motion.img
-                  src="/characters/mascot.png"
-                  alt="Mascot"
-                  className="max-h-full max-w-full object-contain scale-75 select-none mix-blend-screen"
-                  style={{ mixBlendMode: 'screen' }}
-                  animate={{
-                    y: [0, -8, 0]
-                  }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 4,
-                    ease: "easeInOut"
-                  }}
-                />
+            <motion.div
+              animate={{
+                y: [0, -12, 0]
+              }}
+              transition={{
+                repeat: Infinity,
+                duration: 4,
+                ease: "easeInOut"
+              }}
+              className="relative flex flex-col items-center gap-6 z-10"
+            >
+              {/* Speech Bubble */}
+              <div className="h-36 flex items-end justify-center relative">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={speechIndex}
+                    initial={{ opacity: 0, scale: 0.8, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, y: -15 }}
+                    transition={{ type: "spring", stiffness: 250, damping: 18 }}
+                    className="bg-white/20 border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.15)] backdrop-blur-md px-6 py-4 rounded-2xl max-w-[280px] text-center text-sm font-semibold text-slate-100 flex flex-col items-center gap-1 cursor-pointer select-none transition-all hover:bg-white/30 hover:border-white/50 relative"
+                    onClick={() => setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length)}
+                  >
+                    <p className="leading-relaxed">&ldquo;{GOOFY_GREETINGS[speechIndex]}&rdquo;</p>
+                    <span className="text-[10px] uppercase font-bold text-sky-200 mt-2 tracking-wider animate-pulse">Click to poke me 👈</span>
+                    {/* Speech bubble arrow pointing down */}
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white/30" />
+                  </motion.div>
+                </AnimatePresence>
               </div>
-            </div>
+
+              {/* Mascot */}
+              <motion.img
+                src="/characters/mascot.png"
+                alt="Mascot"
+                className="h-64 w-64 md:h-72 md:w-72 object-contain select-none mix-blend-screen cursor-pointer filter drop-shadow-[0_10px_20px_rgba(56,189,248,0.2)]"
+                style={{ mixBlendMode: 'screen' }}
+                whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length)}
+              />
+            </motion.div>
 
           </div>
 
