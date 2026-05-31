@@ -1,8 +1,8 @@
-# EduTrial — Class Trial Debate Game
+# Clashroom — Class Trial Debate Game
 
 > Built in 24 hours for MPC Hacks 2026 · Theme: **Frutiger Aero**
 
-EduTrial transforms your study notes into a fast-paced debate game inspired by the class trial sequences in Danganronpa. Upload a PDF or image of your notes, and the AI turns them into a round of competing arguments — some right, some wrong. Your job is to shoot down the false claims before time runs out.
+Clashroom transforms your study notes into a fast-paced debate game inspired by the class trial sequences in Danganronpa. Upload a PDF or image of your notes, and the AI turns them into a round of competing arguments — some right, some wrong. Your job is to shoot down the false claims before time runs out.
 
 ## How it works
 

@@ -24,7 +24,7 @@ export default function BulletChip({ bullet, isSelected, isUsed, onClick }: Prop
         "aero-button",
         isSelected ? "aero-button-selected" : "",
         isUsed ? "opacity-35 cursor-not-allowed grayscale" : "",
-        "relative px-4 py-3 text-left w-full",
+        "relative flex items-center gap-2 pl-3 pr-4 py-3 text-left w-full",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -32,14 +32,22 @@ export default function BulletChip({ bullet, isSelected, isUsed, onClick }: Prop
       disabled={isUsed}
       aria-pressed={isSelected}
     >
-      {/* Bullet icon */}
-      <span className="mr-1.5 text-base" aria-hidden="true">
+      {/* Bullet icon — fixed-width slot so text alignment never shifts. */}
+      <span
+        className="shrink-0 w-5 text-center text-lg leading-none"
+        aria-hidden="true"
+        style={
+          isSelected && !isUsed
+            ? { color: "#0c5a26", textShadow: "0 0 8px rgb(126 231 135 / 0.95)" }
+            : undefined
+        }
+      >
         {isUsed ? "✕" : isSelected ? "◆" : "◇"}
       </span>
 
       {/* Truncated text */}
       <span
-        className="text-base font-semibold leading-tight block overflow-hidden"
+        className="text-base font-semibold leading-snug block overflow-hidden"
         style={{
           display: "-webkit-box",
           WebkitLineClamp: 2,
@@ -52,8 +60,8 @@ export default function BulletChip({ bullet, isSelected, isUsed, onClick }: Prop
 
       {/* "Used" stamp overlay */}
       {isUsed && (
-        <div className="absolute inset-0 flex items-center justify-center rounded-[0.5rem] bg-black/20">
-          <span className="text-xs font-black tracking-widest text-white/60 uppercase rotate-[-12deg]">
+        <div className="absolute inset-0 flex items-center justify-center rounded-[0.5rem] bg-black/25">
+          <span className="text-sm font-black tracking-[0.2em] text-white/70 uppercase rotate-[-12deg] border-2 border-white/40 rounded px-2 py-0.5">
             Used
           </span>
         </div>

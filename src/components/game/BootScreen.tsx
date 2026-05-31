@@ -33,7 +33,7 @@ export default function BootScreen({ onDone }: Props) {
           className="text-[#57c7ff] text-base tracking-widest uppercase"
           style={{ animation: "boot-flicker 0.3s steps(1) 0.5s 3" }}
         >
-          EduTrial™ OS v2.6
+          Clashroom™ OS v2.6
         </p>
         <p className="text-[#9fe9ff] text-sm tracking-widest opacity-70">
           Academic Debate Engine — Initialising…

@@ -33,6 +33,9 @@ export type GameState = {
     statementId: string;
     outcome: "hit" | "miss";
   } | null;
+  // Set when the winning statement is corrected: we stay in `solving` briefly so
+  // its CORRECTED animation plays, then transition to the win conclusion.
+  pendingWin: boolean;
 
   // Scoring / stats
   mistakes: number;
@@ -58,6 +61,7 @@ export type Action =
   | { type: "FIRE_AT"; statementId: string }
   | { type: "TICK" }
   | { type: "CLEAR_LAST_SHOT" }
+  | { type: "ENTER_WIN_CONCLUSION" }
   | { type: "GO_RESULTS" }
   | { type: "RESET" };
 
@@ -74,6 +78,7 @@ export function makeInitialState(): GameState {
     resolvedStatements: {},
     usedBullets: {},
     lastShot: null,
+    pendingWin: false,
     mistakes: 0,
     score: 0,
     timeLeft: 120,
@@ -189,7 +194,7 @@ export function classTrialReducer(
 
     // ── Rotate to the next unresolved statement ────────────────────────────
     case "NEXT_STATEMENT": {
-      if (state.phase !== "solving") return state;
+      if (state.phase !== "solving" || state.pendingWin) return state;
       return {
         ...state,
         activeStatementIndex: nextStatementIndex(
@@ -262,14 +267,13 @@ export function classTrialReducer(
           score: newScore,
           selectedBulletId: null,
           lastShot: { bulletId: selectedBulletId, statementId, outcome: "hit" },
-          // The corrected card keeps its CORRECTED stamp on screen briefly;
-          // ClassTrial dispatches NEXT_STATEMENT shortly after to rotate it out.
-          // If won: stop timer, transition to winConclusion
+          // The corrected card keeps its CORRECTED stamp on screen briefly.
+          // On a win we stay in `solving` and set `pendingWin` so the final
+          // statement's CORRECTED animation plays; ClassTrial then dispatches
+          // ENTER_WIN_CONCLUSION after a beat. Otherwise ClassTrial dispatches
+          // NEXT_STATEMENT shortly after to rotate the corrected card out.
           timerRunning: won ? false : state.timerRunning,
-          phase: won ? "winConclusion" : state.phase,
-          dialogueScript: won ? [config.conclusion] : state.dialogueScript,
-          dialogueIndex: won ? 0 : state.dialogueIndex,
-          isLineComplete: won ? false : state.isLineComplete,
+          pendingWin: won ? true : state.pendingWin,
         };
         return nextState;
       }
@@ -289,6 +293,18 @@ export function classTrialReducer(
     // ── Clear the transient shot feedback ─────────────────────────────────
     case "CLEAR_LAST_SHOT":
       return { ...state, lastShot: null };
+
+    // ── After the winning CORRECTED animation, move to the conclusion ──────
+    case "ENTER_WIN_CONCLUSION":
+      if (!state.pendingWin) return state;
+      return {
+        ...state,
+        phase: "winConclusion",
+        dialogueScript: [config.conclusion],
+        dialogueIndex: 0,
+        isLineComplete: false,
+        pendingWin: false,
+      };
 
     // ── Transition to results ─────────────────────────────────────────────
     case "GO_RESULTS":

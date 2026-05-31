@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EduTrial — Class Trial Debate Game",
+  title: "Clashroom — Class Trial Debate Game",
   description: "Turn your study notes into an interactive debate game.",
 };
 

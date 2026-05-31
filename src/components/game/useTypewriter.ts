@@ -48,6 +48,11 @@ export function useTypewriter(
     done: false,
   });
   const onDoneRef = useRef(onDone);
+  // Holds the active typing interval so skip() can stop it (otherwise the next
+  // tick overwrites the fully-revealed text with a partial slice).
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Guards against firing onDone twice (e.g. skip + the interval both completing).
+  const doneRef = useRef(false);
 
   useEffect(() => {
     onDoneRef.current = onDone;
@@ -56,6 +61,7 @@ export function useTypewriter(
   // Reset whenever the text changes
   useEffect(() => {
     dispatch({ type: "reset", hasText: !!text });
+    doneRef.current = !text;
 
     if (!text) {
       return;
@@ -67,19 +73,35 @@ export function useTypewriter(
       const nextDisplayed = text.slice(0, index);
       if (index >= text.length) {
         clearInterval(id);
+        intervalRef.current = null;
         dispatch({ type: "complete", value: nextDisplayed });
-        onDoneRef.current?.();
+        if (!doneRef.current) {
+          doneRef.current = true;
+          onDoneRef.current?.();
+        }
         return;
       }
       dispatch({ type: "display", value: nextDisplayed });
     }, speed);
+    intervalRef.current = id;
 
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      intervalRef.current = null;
+    };
   }, [text, speed]);
 
   const skip = () => {
+    // Stop the running interval so it can't overwrite the revealed text.
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     dispatch({ type: "complete", value: text });
-    onDoneRef.current?.();
+    if (!doneRef.current) {
+      doneRef.current = true;
+      onDoneRef.current?.();
+    }
   };
 
   return { displayed: state.displayed, done: state.done, skip };

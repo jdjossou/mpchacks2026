@@ -20,7 +20,7 @@ import FloatingStatement from "./FloatingStatement";
 import ResultsScreen     from "./ResultsScreen";
 
 // How long each statement stays on stage before the debate rotates to the next.
-const STATEMENT_WINDOW_MS = 3500;
+const STATEMENT_WINDOW_MS = 5000;
 
 interface Props {
   game: GameConfig;
@@ -69,18 +69,26 @@ export default function ClassTrial({ game }: Props) {
   // ── Once the active statement is corrected, rotate it out promptly ─────
   // (keeps the CORRECTED stamp on screen for a beat, then moves on)
   useEffect(() => {
-    if (state.phase !== "solving") return;
+    if (state.phase !== "solving" || state.pendingWin) return;
     const activeId = game.debate.statements[state.activeStatementIndex]?.id;
     if (!activeId || !state.resolvedStatements[activeId]) return;
     const id = setTimeout(() => dispatch({ type: "NEXT_STATEMENT" }), 1000);
     return () => clearTimeout(id);
   }, [
     state.phase,
+    state.pendingWin,
     state.activeStatementIndex,
     state.resolvedStatements,
     game,
     dispatch,
   ]);
+
+  // ── On a win, hold the final CORRECTED animation, then go to conclusion ─
+  useEffect(() => {
+    if (!state.pendingWin) return;
+    const id = setTimeout(() => dispatch({ type: "ENTER_WIN_CONCLUSION" }), 1400);
+    return () => clearTimeout(id);
+  }, [state.pendingWin, dispatch]);
 
   // ─── Derive the active speaker for CharacterStage ─────────────────────
   const activeSpeakerId = (() => {
@@ -219,8 +227,8 @@ export default function ClassTrial({ game }: Props) {
                 />
               </div>
 
-              <div className="absolute inset-0 flex items-center justify-center px-4 pointer-events-none">
-                <div className="pointer-events-auto">
+              <div className="absolute inset-0 px-4 pointer-events-none">
+                <AnimatePresence mode="wait">
                   <FloatingStatement
                     key={state.statementShowKey}
                     statement={activeStatement}
@@ -238,7 +246,7 @@ export default function ClassTrial({ game }: Props) {
                       dispatch({ type: "FIRE_AT", statementId: activeStatement.id })
                     }
                   />
-                </div>
+                </AnimatePresence>
               </div>
             </div>
 
