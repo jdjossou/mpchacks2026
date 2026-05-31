@@ -1,6 +1,6 @@
 import type { GameConfig } from "./gameTypes";
 
-export const GENERATED_GAME_STORAGE_KEY = "edutrial:generated-game:v1";
+export const GENERATED_GAME_STORAGE_KEY = "clashroom:generated-game:v1";
 
 export type ParsedDocumentGameJson = {
   topic: string;
