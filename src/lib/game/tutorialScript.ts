@@ -17,26 +17,26 @@ export const tutorialScript: DialogueLine[] = [
   {
     id: "tut-1",
     speakerId: "teacher",
-    text: "Welcome to the Class Trial! Two students will debate the topic you just studied.",
+    text: "Welcome to Clashroom: Crash 'n Learn! Two students will debate the topic you just studied.",
   },
   {
     id: "tut-2",
     speakerId: "teacher",
-    text: "Some of what they say is WRONG. Your job is to spot the mistakes and shoot them down!",
+    text: "Some of what they say is WRONG. Your job is to spot the mistakes and correct them!",
   },
   {
     id: "tut-3",
     speakerId: "teacher",
-    text: "After the debate, statements will scroll across the screen. Select a Truth Bullet from your inventory below...",
+    text: "You will have flashcards at the bottom of your screen, you can scroll through them using the arrows.",
   },
   {
     id: "tut-4",
     speakerId: "teacher",
-    text: "...then click the wrong statement to fire it! A correct hit eliminates the false claim. A wrong shot costs you points.",
+    text: "When you spot an incorrect statement, select the appropriate flashcard and drag it to the statement to correct it.",
   },
   {
     id: "tut-5",
     speakerId: "teacher",
-    text: "Watch out — one bullet is a RED HERRING. It won't help you. Beware of the clock! You have 2 minutes. Good luck!",
+    text: "Watch out some of the flashcards are trick answers!",
   },
 ];
