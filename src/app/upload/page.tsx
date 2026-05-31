@@ -15,7 +15,7 @@ import { playMusic } from '@/lib/music';
 const GOOFY_GREETINGS = [
   "FEED ME FILES! I consume knowledge and spit out gaming! 👁️👄👁️",
   "Goooood day! Ready to crash some learning? Let's go! 💥📚",
-  "Beep boop! If you drop a level JSON, I promise not to eat it... mostly. 🤖",
+  "Beep boop! If you drop a level .clashroom, I promise not to eat it... mostly. 🤖",
   "I'm Mizue! I'm here to review your papers and judge your decisions! 📐🏫",
   "Got a PDF? A text file? A JPEG of your homework? Chuck it in!",
   "Oops! Did you click me? That tickles! 😆✨",
@@ -117,24 +117,24 @@ export default function Home() {
     setFile(selectedFile);
 
     const nameLower = selectedFile.name.toLowerCase();
-    const isJson = selectedFile.type === 'application/json' || nameLower.endsWith('.json');
+    const isClashroom = nameLower.endsWith('.clashroom');
     const isPdf = selectedFile.type === 'application/pdf' || nameLower.endsWith('.pdf');
     const isImg = selectedFile.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(nameLower);
     const isTxt = selectedFile.type === 'text/plain' || nameLower.endsWith('.txt');
 
-    if (isJson) {
-      handleJsonParse(selectedFile);
+    if (isClashroom) {
+      handleClashroomParse(selectedFile);
     } else if (isPdf || isImg || isTxt) {
       handleParse(selectedFile);
     } else {
-      setError('Only PDF, TXT, JSON level files, and supported images (PNG, JPG, WEBP) are supported.');
+      setError('Only PDF, TXT, .clashroom level files, and supported images (PNG, JPG, WEBP) are supported.');
     }
   };
 
-  const handleJsonParse = async (selectedFile: File) => {
+  const handleClashroomParse = async (selectedFile: File) => {
     setError(null);
-    if (!selectedFile.name.toLowerCase().endsWith('.json')) {
-      setError('Only JSON files are supported for loading levels.');
+    if (!selectedFile.name.toLowerCase().endsWith('.clashroom')) {
+      setError('Only .clashroom files are supported for loading levels.');
       return;
     }
     if (selectedFile.size > 15 * 1024 * 1024) {
@@ -150,22 +150,25 @@ export default function Home() {
       const structuredJson = JSON.parse(text);
 
       const requiredKeys = [
+        'id',
+        'title',
         'topic',
+        'characters',
         'intro',
-        'statement-wrong-1',
-        'statement-wrong-2',
-        'statement-correct-1',
-        'statement-correct-2',
-        'answer-correct-1',
-        'answer-correct-2',
-        'answer-wrong-1',
-        'answer-wrong-2',
+        'debate',
         'conclusion'
       ];
-      
+
       const missingKeys = requiredKeys.filter(key => !(key in structuredJson));
       if (missingKeys.length > 0) {
-        throw new Error(`Invalid level JSON: missing fields ${missingKeys.join(', ')}`);
+        throw new Error(`Invalid .clashroom level file: missing fields ${missingKeys.join(', ')}`);
+      }
+
+      if (typeof structuredJson.topic !== 'object' || !structuredJson.topic || !('name' in structuredJson.topic)) {
+        throw new Error(`Invalid .clashroom level file: "topic" must be an object containing "name".`);
+      }
+      if (typeof structuredJson.debate !== 'object' || !structuredJson.debate || !Array.isArray(structuredJson.debate.statements)) {
+        throw new Error(`Invalid .clashroom level file: "debate" must be an object containing "statements" array.`);
       }
 
       const responseData = {
@@ -178,7 +181,7 @@ export default function Home() {
       sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
       setHasLoadedGame(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to parse JSON level file.');
+      setError(err instanceof Error ? err.message : 'Failed to parse .clashroom level file.');
     } finally {
       setIsParsing(false);
     }
@@ -218,7 +221,7 @@ export default function Home() {
 
       const isImg = fileToParse.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(fileToParse.name);
       const isTxt = fileToParse.type === 'text/plain' || fileToParse.name.toLowerCase().endsWith('.txt');
-      
+
       let response;
       if (isImg) {
         response = await parseImageAction(formData);
@@ -252,11 +255,10 @@ export default function Home() {
       onDragOver={handleDrag}
       onDragLeave={handleDrag}
       onDrop={handleDrop}
-      className={`min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white transition-all duration-300 ${
-        isDragActive ? 'brightness-110 contrast-95 ring-8 ring-sky-400/50 ring-inset' : ''
-      }`}
+      className={`min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white transition-all duration-300 ${isDragActive ? 'brightness-110 contrast-95 ring-8 ring-sky-400/50 ring-inset' : ''
+        }`}
       style={{
-        backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)), url('/backgrounds/frutiger.jpg')",
+        backgroundImage: "linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0)), url('/backgrounds/frutiger.jpg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -331,10 +333,10 @@ export default function Home() {
                             onClick={
                               index === 1
                                 ? () => {
-                                    playSound('menu_select');
-                                    if (hasLoadedGame) router.push('/game');
-                                    else handleUploadClick();
-                                  }
+                                  playSound('menu_select');
+                                  if (hasLoadedGame) router.push('/game');
+                                  else handleUploadClick();
+                                }
                                 : undefined
                             }
                             onMouseEnter={() => {
@@ -358,8 +360,8 @@ export default function Home() {
                               transformOrigin: 'left center'
                             }}
                             className={`text-left font-black tracking-wide relative text-4xl md:text-5xl ${isActive
-                                ? 'text-white cursor-pointer hover:text-sky-300'
-                                : 'text-white cursor-default'
+                              ? 'text-white cursor-pointer hover:text-sky-300'
+                              : 'text-white cursor-default'
                               }`}
                           >
                             <span>{item.name}</span>
@@ -373,7 +375,7 @@ export default function Home() {
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    accept="application/pdf,image/*,text/plain,.txt,application/json,.json"
+                    accept="application/pdf,image/*,text/plain,.txt,.clashroom"
                     className="hidden"
                   />
                 </motion.div>
@@ -415,7 +417,7 @@ export default function Home() {
                       </AnimatePresence>
                     </div>
                     <p className="text-xs font-semibold text-sky-200 max-w-xs mx-auto mt-2">
-                      {file?.name?.toLowerCase().endsWith('.json')
+                      {file?.name?.toLowerCase().endsWith('.clashroom')
                         ? `Mizue Sensei is parsing level data from "${file?.name}"...`
                         : `Mizue Sensei is reviewing "${file?.name}"...`}
                     </p>
@@ -428,13 +430,13 @@ export default function Home() {
 
           {/* RIGHT HALF: TEACHER WITH FLOATING MASCOT AND SPEECH BUBBLE OVER MASCOT */}
           <div className="flex flex-col w-full h-full min-h-[500px] items-center justify-end relative pb-4">
-            
+
             {/* Glowing background aura */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-sky-400/15 blur-3xl pointer-events-none animate-pulse z-0" />
 
             {/* Characters Container (holds teacher and floating mascot with text bubble over mascot) */}
             <div className="relative w-full max-w-md flex items-end justify-center z-10">
-              
+
               {/* Teacher (Big Size, centered, breathing animation) */}
               <motion.img
                 src="/characters/teacher.png"
