@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle,
-  Globe
+  Globe,
+  Search,
+  ArrowLeft,
+  Play
 } from 'lucide-react';
 import {
   parsePDFAction,
@@ -20,16 +23,9 @@ import {
 } from '@/lib/game/generatedGame';
 import { playSound } from '@/lib/sound';
 import { playMusic } from '@/lib/music';
-
-const GOOFY_GREETINGS = [
-  "FEED ME FILES! I consume knowledge and spit out gaming! 👁️👄👁️",
-  "Goooood day! Ready to crash some learning? Let's go! 💥📚",
-  "Beep boop! If you drop a level JSON, I promise not to eat it... mostly. 🤖",
-  "I'm Mizue! I'm here to review your papers and judge your decisions! 📐🏫",
-  "Got a PDF? A text file? A JPEG of your homework? Chuck it in!",
-  "Oops! Did you click me? That tickles! 😆✨",
-  "Don't worry, the grade I give you is only 90% based on my mood! 👩‍🏫"
-];
+import { isMuted, toggleMuted, subscribe } from '@/lib/audioSettings';
+import { PREMADE_LEVELS } from '@/lib/game/premadeLevels';
+import type { GameConfig } from '@/lib/game/gameTypes';
 
 export default function Home() {
   const router = useRouter();
@@ -42,7 +38,24 @@ export default function Home() {
   const [showSecret, setShowSecret] = useState<boolean>(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hasLoadedGame, setHasLoadedGame] = useState<boolean>(false);
-  const [speechIndex, setSpeechIndex] = useState<number>(0);
+  const [menuView, setMenuView] = useState<'main' | 'settings' | 'browse'>('main');
+  const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const muted = useSyncExternalStore(subscribe, isMuted, () => false);
+
+  const handleSelectPremadeLevel = (level: GameConfig) => {
+    playSound('menu_select');
+    const responseData = {
+      json: level,
+      version: 'premade',
+      size: 0,
+      name: `${level.title}.clashroom`,
+    };
+    sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
+    localStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
+    setHasLoadedGame(true);
+    router.push('/game');
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -104,13 +117,7 @@ export default function Home() {
     }
   }, []);
 
-  // Auto-cycle mascot speech bubbles
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length);
-    }, 10000);
-    return () => clearInterval(timer);
-  }, []);
+
 
   /* File size formatter (unused but preserved)
   const formatBytes = (bytes: number, decimals = 2) => {
@@ -165,24 +172,24 @@ export default function Home() {
     setFile(selectedFile);
 
     const nameLower = selectedFile.name.toLowerCase();
-    const isJson = selectedFile.type === 'application/json' || nameLower.endsWith('.json');
+    const isClashroom = nameLower.endsWith('.clashroom');
     const isPdf = selectedFile.type === 'application/pdf' || nameLower.endsWith('.pdf');
     const isImg = selectedFile.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(nameLower);
     const isTxt = selectedFile.type === 'text/plain' || nameLower.endsWith('.txt');
 
-    if (isJson) {
-      handleJsonParse(selectedFile);
+    if (isClashroom) {
+      handleClashroomParse(selectedFile);
     } else if (isPdf || isImg || isTxt) {
       handleParse(selectedFile);
     } else {
-      setError('Only PDF, TXT, JSON level files, and supported images (PNG, JPG, WEBP) are supported.');
+      setError('Only PDF, TXT, .clashroom level files, and supported images (PNG, JPG, WEBP) are supported.');
     }
   };
 
-  const handleJsonParse = async (selectedFile: File) => {
+  const handleClashroomParse = async (selectedFile: File) => {
     setError(null);
-    if (!selectedFile.name.toLowerCase().endsWith('.json')) {
-      setError('Only JSON files are supported for loading levels.');
+    if (!selectedFile.name.toLowerCase().endsWith('.clashroom')) {
+      setError('Only .clashroom files are supported for loading levels.');
       return;
     }
     if (selectedFile.size > 15 * 1024 * 1024) {
@@ -198,22 +205,25 @@ export default function Home() {
       const structuredJson = JSON.parse(text);
 
       const requiredKeys = [
+        'id',
+        'title',
         'topic',
+        'characters',
         'intro',
-        'statement-wrong-1',
-        'statement-wrong-2',
-        'statement-correct-1',
-        'statement-correct-2',
-        'answer-correct-1',
-        'answer-correct-2',
-        'answer-wrong-1',
-        'answer-wrong-2',
+        'debate',
         'conclusion'
       ];
-      
+
       const missingKeys = requiredKeys.filter(key => !(key in structuredJson));
       if (missingKeys.length > 0) {
-        throw new Error(`Invalid level JSON: missing fields ${missingKeys.join(', ')}`);
+        throw new Error(`Invalid .clashroom level file: missing fields ${missingKeys.join(', ')}`);
+      }
+
+      if (typeof structuredJson.topic !== 'object' || !structuredJson.topic || !('name' in structuredJson.topic)) {
+        throw new Error(`Invalid .clashroom level file: "topic" must be an object containing "name".`);
+      }
+      if (typeof structuredJson.debate !== 'object' || !structuredJson.debate || !Array.isArray(structuredJson.debate.statements)) {
+        throw new Error(`Invalid .clashroom level file: "debate" must be an object containing "statements" array.`);
       }
 
       const responseData: GeneratedGameStoragePayload = {
@@ -227,7 +237,7 @@ export default function Home() {
       sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(enrichedResponseData));
       setHasLoadedGame(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to parse JSON level file.');
+      setError(err instanceof Error ? err.message : 'Failed to parse .clashroom level file.');
     } finally {
       setIsParsing(false);
     }
@@ -267,7 +277,7 @@ export default function Home() {
 
       const isImg = fileToParse.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(fileToParse.name);
       const isTxt = fileToParse.type === 'text/plain' || fileToParse.name.toLowerCase().endsWith('.txt');
-      
+
       let response;
       if (isImg) {
         response = await parseImageAction(formData);
@@ -300,25 +310,108 @@ export default function Home() {
     }
   };
 
+  const menuItems = menuView === 'main' ? [
+    {
+      id: 'browse',
+      name: 'Browse Levels',
+      onClick: () => {
+        playSound('menu_select');
+        setMenuView('browse');
+      }
+    },
+    {
+      id: 'play_upload',
+      name: hasLoadedGame ? 'Play' : 'Upload Level',
+      onClick: () => {
+        playSound('menu_select');
+        if (hasLoadedGame) {
+          router.push('/game');
+        } else {
+          handleUploadClick();
+        }
+      }
+    },
+    ...(hasLoadedGame ? [{
+      id: 'unload',
+      name: 'Unload Level',
+      onClick: () => {
+        playSound('menu_select');
+        localStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
+        sessionStorage.removeItem(GENERATED_GAME_STORAGE_KEY);
+        setHasLoadedGame(false);
+        setFile(null);
+        setError(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    }] : []),
+    {
+      id: 'settings',
+      name: 'Settings',
+      onClick: () => {
+        playSound('menu_select');
+        setMenuView('settings');
+      }
+    },
+  ] : [
+    {
+      id: 'sound',
+      name: `Sound: ${muted ? 'Off' : 'On'}`,
+      onClick: () => {
+        playSound('menu_select');
+        toggleMuted();
+      }
+    },
+    {
+      id: 'difficulty',
+      name: `Difficulty: ${difficulty}`,
+      onClick: () => {
+        playSound('menu_select');
+        setDifficulty((prev) => {
+          if (prev === 'Easy') return 'Medium';
+          if (prev === 'Medium') return 'Hard';
+          return 'Easy';
+        });
+      }
+    },
+    {
+      id: 'language',
+      name: 'Language (EN)',
+    },
+    {
+      id: 'back',
+      name: 'Back',
+      onClick: () => {
+        playSound('menu_select');
+        setMenuView('main');
+      }
+    }
+  ];
+  const mid = (menuItems.length - 1) / 2;
+
+  const filteredLevels = PREMADE_LEVELS.filter(level =>
+    level.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    level.topic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    level.topic.summary.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div
       onDragEnter={handleDrag}
       onDragOver={handleDrag}
       onDragLeave={handleDrag}
       onDrop={handleDrop}
-      className={`min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white transition-all duration-300 ${
-        isDragActive ? 'brightness-110 contrast-95 ring-8 ring-sky-400/50 ring-inset' : ''
-      }`}
+      className={`min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-400 selection:text-white transition-all duration-300 ${isDragActive ? 'brightness-110 contrast-95 ring-8 ring-sky-400/50 ring-inset' : ''
+        }`}
       style={{
-        backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)), url('/backgrounds/frutiger.jpg')",
+        backgroundImage: "linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0)), url('/backgrounds/frutiger.jpg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
       }}
     >
-      {/* Floating Glass Bubbles for Aero Vibe */}
-      <div className="absolute top-[15%] right-[20%] w-32 h-32 rounded-full bg-white/20 border border-white/40 shadow-[inset_-10px_-10px_20px_rgba(255,255,255,0.2),_0_10px_20px_rgba(0,0,0,0.05)] pointer-events-none backdrop-blur-[2px] z-0" />
-      <div className="absolute bottom-[25%] left-[10%] w-24 h-24 rounded-full bg-white/25 border border-white/50 shadow-[inset_-8px_-8px_15px_rgba(255,255,255,0.25),_0_8px_15px_rgba(0,0,0,0.05)] pointer-events-none backdrop-blur-[1px] z-0" />
+
 
 
 
@@ -367,67 +460,120 @@ export default function Home() {
                     {/* Header Divider Line */}
                     <div className="w-80 h-[2px] bg-gradient-to-r from-white/40 via-white/15 to-transparent mt-6 mb-16" />
 
-                    <div className="flex flex-col gap-5 items-start justify-center h-[340px] w-full">
-                      {[
-                        { name: 'Browse Levels' },
-                        { name: hasLoadedGame ? 'Play' : 'Upload Level' },
-                        { name: 'Settings' },
-                      ].map((item, index) => {
-                        const baseX = (2.0 - Math.pow(Math.abs(1 - index), 1.5)) * 18;
-                        const baseRotate = (index - 1) * 6.0;
-                        const isPlay = item.name === 'Play';
-                        const isUpload = item.name === 'Upload Level';
-                        const isActive = isPlay || isUpload;
+                    {menuView === 'browse' ? (
+                      <div className="w-full flex flex-col h-[340px] gap-4">
+                        {/* Search bar & Back Button */}
+                        <div className="flex items-center gap-3 w-full pr-4">
+                          <button
+                            onClick={() => {
+                              playSound('menu_select');
+                              setMenuView('main');
+                              setSearchQuery('');
+                            }}
+                            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-white flex items-center justify-center cursor-pointer shadow-md hover:scale-105 active:scale-95 shrink-0"
+                            aria-label="Back to main menu"
+                          >
+                            <ArrowLeft className="w-5 h-5" />
+                          </button>
+                          <div className="relative flex-1">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
+                            <input
+                              type="text"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              placeholder="Search levels..."
+                              className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder-slate-300 focus:outline-none focus:border-sky-400 focus:bg-white/15 transition-all shadow-inner"
+                            />
+                          </div>
+                        </div>
 
-                        return (
-                          <motion.button
-                            key={index === 1 ? 'upload-play' : item.name}
-                            onClick={
-                              index === 1
-                                ? () => {
-                                    playSound('menu_select');
-                                    if (hasLoadedGame) router.push('/game');
-                                    else handleUploadClick();
-                                  }
-                                : undefined
-                            }
-                            onMouseEnter={() => {
-                              if (isActive) playSound('menu_hover');
-                              setHoveredIndex(index);
-                            }}
-                            onMouseLeave={() => setHoveredIndex(null)}
-                            whileTap={isActive ? { scale: 0.98 } : undefined}
-                            animate={{
-                              scale: hoveredIndex === index ? 1.45 : 1.0,
-                              x: hoveredIndex === index ? baseX + 20 : baseX,
-                              rotate: baseRotate,
-                              paddingTop: hoveredIndex === index ? 12 : 0,
-                              paddingBottom: hoveredIndex === index ? 12 : 0,
-                              opacity: hoveredIndex === null ? (isActive ? 1 : 0.4) : (hoveredIndex === index ? 1 : 0.25)
-                            }}
-                            transition={{ type: "spring", stiffness: 350, damping: 20 }}
-                            style={{
-                              fontFamily: "var(--font-sans)",
-                              WebkitTextStroke: '1px black',
-                              transformOrigin: 'left center'
-                            }}
-                            className={`text-left font-black tracking-wide relative text-4xl md:text-5xl ${isActive
+                        {/* Level cards list */}
+                        <div className="flex-1 overflow-y-auto pr-3 space-y-3 scrollbar-thin scrollbar-thumb-sky-500/50 scrollbar-track-transparent">
+                          {filteredLevels.length > 0 ? (
+                            filteredLevels.map((level) => (
+                              <motion.div
+                                key={level.id}
+                                whileHover={{ scale: 1.02, x: 4 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => handleSelectPremadeLevel(level)}
+                                onMouseEnter={() => playSound('menu_hover')}
+                                className="glass-panel p-4 shadow-md border border-white/25 hover:border-white/45 rounded-2xl relative overflow-hidden bg-white/10 hover:bg-white/15 cursor-pointer flex flex-col justify-between transition-all group"
+                              >
+                                <div className="flex justify-between items-start gap-2">
+                                  <div className="space-y-0.5">
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-200 group-hover:text-sky-300 transition-colors">
+                                      {level.topic.name}
+                                    </span>
+                                    <h4 className="font-extrabold text-base text-white text-shadow-sm group-hover:text-sky-100 transition-colors">
+                                      {level.title}
+                                    </h4>
+                                  </div>
+                                </div>
+
+                                <div className="flex justify-end items-center mt-3 pt-2 border-t border-white/10 text-[10px] text-slate-300 font-bold">
+                                  <div className="flex items-center gap-1 text-sky-200 group-hover:text-sky-100 font-black">
+                                    <span>Play Level</span>
+                                    <Play className="w-3 h-3 fill-sky-200 group-hover:fill-sky-100 transition-all group-hover:translate-x-0.5" />
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))
+                          ) : (
+                            <div className="text-center py-10 text-sm text-slate-300 font-semibold bg-white/5 border border-white/10 rounded-2xl">
+                              No levels found matching &ldquo;{searchQuery}&rdquo;
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-5 items-start justify-center h-[340px] w-full">
+                        {menuItems.map((item, index) => {
+                          const baseX = (2.0 - Math.pow(Math.abs(mid - index), 1.5)) * 18;
+                          const baseRotate = (index - mid) * 6.0;
+                          const isActive = !!item.onClick;
+
+                          return (
+                            <motion.button
+                              key={item.id}
+                              onClick={item.onClick}
+                              onMouseEnter={() => {
+                                if (isActive) playSound('menu_hover');
+                                setHoveredIndex(index);
+                              }}
+                              onMouseLeave={() => setHoveredIndex(null)}
+                              whileTap={isActive ? { scale: 0.98 } : undefined}
+                              animate={{
+                                scale: hoveredIndex === index ? 1.45 : 1.0,
+                                x: hoveredIndex === index ? baseX + 20 : baseX,
+                                rotate: baseRotate,
+                                paddingTop: hoveredIndex === index ? 12 : 0,
+                                paddingBottom: hoveredIndex === index ? 12 : 0,
+                                opacity: hoveredIndex === null ? (isActive ? 1 : 0.4) : (hoveredIndex === index ? 1 : 0.25)
+                              }}
+                              transition={{ type: "spring", stiffness: 350, damping: 20 }}
+                              style={{
+                                fontFamily: "var(--font-sans)",
+                                WebkitTextStroke: '1px black',
+                                transformOrigin: 'left center'
+                              }}
+                              className={`text-left font-black tracking-wide relative text-4xl md:text-5xl ${isActive
                                 ? 'text-white cursor-pointer hover:text-sky-300'
                                 : 'text-white cursor-default'
-                              }`}
-                          >
-                            <span>{item.name}</span>
-                          </motion.button>
-                        );
-                      })}
-                    </div>
+                                }`}
+                            >
+                              <span>{item.name}</span>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   <input
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    accept="application/pdf,image/*,text/plain,.txt,application/json,.json"
+                    accept="application/pdf,image/*,text/plain,.txt,.clashroom"
                     className="hidden"
                   />
                 </motion.div>
@@ -469,7 +615,7 @@ export default function Home() {
                       </AnimatePresence>
                     </div>
                     <p className="text-xs font-semibold text-sky-200 max-w-xs mx-auto mt-2">
-                      {file?.name?.toLowerCase().endsWith('.json')
+                      {file?.name?.toLowerCase().endsWith('.clashroom')
                         ? `Mizue Sensei is parsing level data from "${file?.name}"...`
                         : `Mizue Sensei is reviewing "${file?.name}"...`}
                     </p>
@@ -480,15 +626,15 @@ export default function Home() {
             </AnimatePresence>
           </div>
 
-          {/* RIGHT HALF: TEACHER WITH FLOATING MASCOT AND SPEECH BUBBLE OVER MASCOT */}
+          {/* RIGHT HALF: TEACHER WITH FLOATING MASCOT */}
           <div className="flex flex-col w-full h-full min-h-[500px] items-center justify-end relative pb-4">
-            
+
             {/* Glowing background aura */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-sky-400/15 blur-3xl pointer-events-none animate-pulse z-0" />
 
-            {/* Characters Container (holds teacher and floating mascot with text bubble over mascot) */}
-            <div className="relative w-full max-w-md flex items-end justify-center z-10">
-              
+            {/* Characters Container (holds teacher and floating mascot, shifted slightly lower and to the right) */}
+            <div className="relative w-full max-w-md flex items-end justify-center z-10 translate-x-6 md:translate-x-12 translate-y-6 md:translate-y-10">
+
               {/* Teacher (Big Size, centered, breathing animation) */}
               <motion.img
                 src="/characters/teacher.png"
@@ -501,12 +647,11 @@ export default function Home() {
                   duration: 6,
                   ease: "easeInOut"
                 }}
-                className="h-[360px] md:h-[450px] w-auto object-contain select-none cursor-pointer filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.3)] transition-all duration-300"
+                className="h-[360px] md:h-[450px] w-auto object-contain select-none filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.3)] transition-all duration-300"
                 whileHover={{ scale: 1.02 }}
-                onClick={() => setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length)}
               />
 
-              {/* Floating Mascot & Speech Bubble */}
+              {/* Floating Mascot */}
               <motion.div
                 animate={{
                   y: [0, -15, 0],
@@ -517,28 +662,8 @@ export default function Home() {
                   duration: 4,
                   ease: "easeInOut"
                 }}
-                className="absolute top-[-90px] md:top-[-110px] right-[-25px] md:right-[-45px] z-20 cursor-pointer flex flex-col items-center gap-1"
-                onClick={() => setSpeechIndex((prev) => (prev + 1) % GOOFY_GREETINGS.length)}
+                className="absolute top-[30px] md:top-[40px] right-[-20px] md:right-[-35px] z-20 flex flex-col items-center gap-1"
               >
-                {/* Speech Bubble */}
-                <div className="h-32 flex items-end justify-center relative mb-1">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={speechIndex}
-                      initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, y: -10 }}
-                      transition={{ type: "spring", stiffness: 250, damping: 18 }}
-                      className="bg-white/25 border border-white/45 shadow-[0_8px_32px_rgba(0,0,0,0.15)] backdrop-blur-md px-4 py-3 rounded-2xl max-w-[200px] md:max-w-[240px] text-center text-xs font-semibold text-slate-100 flex flex-col items-center gap-1 cursor-pointer select-none transition-all hover:bg-white/35 hover:border-white/55 relative"
-                    >
-                      <p className="leading-relaxed">&ldquo;{GOOFY_GREETINGS[speechIndex]}&rdquo;</p>
-                      <span className="text-[9px] uppercase font-bold text-sky-200 mt-1 tracking-wider animate-pulse">Click to poke us 👈</span>
-                      {/* Speech bubble arrow pointing down */}
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white/30" />
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-
                 {/* Mascot Image */}
                 <motion.img
                   src="/characters/mascot.png"

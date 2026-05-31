@@ -69,6 +69,18 @@ export function gameConfigFromParsedDocument(
   sourceName = "uploaded-notes",
   voiceovers?: TeacherVoiceovers
 ): GameConfig {
+  if (
+    value &&
+    typeof value === "object" &&
+    "id" in value &&
+    "title" in value &&
+    "topic" in value &&
+    "debate" in value &&
+    "conclusion" in value
+  ) {
+    return value as GameConfig;
+  }
+
   const json = requireParsedDocumentJson(value);
   const topic = json.topic.trim();
   const sourceSlug = slugify(sourceName.replace(/\.[^.]+$/, ""));
