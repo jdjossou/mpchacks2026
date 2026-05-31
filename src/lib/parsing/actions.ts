@@ -3,6 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { PDFParse } from 'pdf-parse';
+import clientPromise from '../mongodb';
 
 const PARSING_DIR = path.join(
   /*turbopackIgnore: true*/ process.cwd(),
@@ -390,4 +391,23 @@ export async function getLoadingMessagesAction(): Promise<string[]> {
     'Analyzing text hierarchy under crystal clear glass...',
     'Organizing structured data into clean JSON grids...'
   ];
+}
+
+export async function testMongoConnectionAction(): Promise<{ success: boolean; databases?: string[]; error?: string }> {
+  try {
+    const client = await clientPromise;
+    const adminDb = client.db().admin();
+    const dbsList = await adminDb.listDatabases();
+    const dbNames = dbsList.databases.map((db) => db.name);
+    return {
+      success: true,
+      databases: dbNames,
+    };
+  } catch (err: unknown) {
+    console.error('MongoDB connection test failed:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Unknown database error',
+    };
+  }
 }
