@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import type { DialogueLine, Character } from "@/lib/game/gameTypes";
 import { useTypewriter } from "./useTypewriter";
+import { playSound } from "@/lib/sound";
 
 interface Props {
   line: DialogueLine;
@@ -46,6 +47,7 @@ export default function DialogueBox({
 
   const handleClick = () => {
     if (!isComplete) {
+      playSound("dialogue_double_click"); // cue for instantly completing the line
       skip(); // reveal text instantly
     } else if (!hasChoices) {
       onInteract(); // advance to next line (choice lines wait for a pick)

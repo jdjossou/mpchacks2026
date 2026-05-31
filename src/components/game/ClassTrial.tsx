@@ -72,27 +72,26 @@ export default function ClassTrial({ game }: Props) {
     return () => clearTimeout(id);
   }, [state.lastShot]);
 
-  // ── Sound: win fanfare (fires the moment the final claim is corrected) ─
+  // ── Sound: win fanfare / lose sting on the results screen ─────────────
+  // Both fire once on entering `results`; the music has been stopped by then
+  // (see the music effect below), so the cue plays against silence.
   useEffect(() => {
-    if (state.pendingWin) playSound("game_win");
-  }, [state.pendingWin]);
-
-  // ── Sound: lose sting (timer ran out) ─────────────────────────────────
-  useEffect(() => {
-    if (state.phase === "results" && state.outcome === "fail") {
-      playSound("game_lose");
-    }
+    if (state.phase !== "results") return;
+    playSound(state.outcome === "success" ? "game_win" : "game_lose");
   }, [state.phase, state.outcome]);
 
   // ── Music: narrative-split background track per phase ─────────────────
   // Pre-debate phases share the tutorial theme; the debate onward uses the
   // game theme. playMusic no-ops when the track is unchanged, so this only
   // switches once (at `solving`) — no restart between the tutorial phases.
+  // The results screen stops the music so the win/lose cue stands alone.
   useEffect(() => {
+    if (state.phase === "results") {
+      stopMusic();
+      return;
+    }
     const track: MusicName =
-      state.phase === "solving" ||
-      state.phase === "winConclusion" ||
-      state.phase === "results"
+      state.phase === "solving" || state.phase === "winConclusion"
         ? "game"
         : "tutorial";
     playMusic(track);
