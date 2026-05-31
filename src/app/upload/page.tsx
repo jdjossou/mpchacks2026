@@ -7,7 +7,7 @@ import {
   AlertCircle,
   Globe
 } from 'lucide-react';
-import { parsePDFAction, parseImageAction, getLoadingMessagesAction } from '@/lib/parsing/actions';
+import { parsePDFAction, parseImageAction, parseTextAction, getLoadingMessagesAction } from '@/lib/parsing/actions';
 import { GENERATED_GAME_STORAGE_KEY } from '@/lib/game/generatedGame';
 
 export default function Home() {
@@ -21,13 +21,34 @@ export default function Home() {
   const [showSecret, setShowSecret] = useState<boolean>(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
+  const [loadedViaJson, setLoadedViaJson] = useState<boolean>(false);
+  const [loadedViaUpload, setLoadedViaUpload] = useState<boolean>(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const jsonInputRef = useRef<HTMLInputElement>(null);
 
   // Load loading messages on mount
   useEffect(() => {
     getLoadingMessagesAction().then((msgs) => {
       setMessages(msgs);
     });
+
+    const saved = sessionStorage.getItem(GENERATED_GAME_STORAGE_KEY);
+    if (saved) {
+      try {
+        const gameData = JSON.parse(saved);
+        const name = gameData?.name || '';
+        if (name) {
+          if (name.toLowerCase().endsWith('.json')) {
+            setLoadedViaJson(true);
+          } else {
+            setLoadedViaUpload(true);
+          }
+        }
+      } catch {
+        // Ignore
+      }
+    }
   }, []);
 
   // File size formatter
@@ -68,12 +89,81 @@ export default function Home() {
     }
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleJsonFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleJsonParse(e.target.files[0]);
+    }
+  };
+
+  const handleLoadLevelClick = () => {
+    jsonInputRef.current?.click();
+  };
+
+  const handleJsonParse = async (selectedFile: File) => {
+    setError(null);
+    if (!selectedFile.name.toLowerCase().endsWith('.json')) {
+      setError('Only JSON files are supported for loading levels.');
+      return;
+    }
+    if (selectedFile.size > 15 * 1024 * 1024) {
+      setError('File size must be under 15MB.');
+      return;
+    }
+
+    setIsParsing(true);
+    setCurrentMessage('Loading level data...');
+
+    try {
+      const text = await selectedFile.text();
+      const structuredJson = JSON.parse(text);
+
+      const requiredKeys = [
+        'topic',
+        'intro',
+        'statement-wrong-1',
+        'statement-wrong-2',
+        'statement-correct-1',
+        'statement-correct-2',
+        'answer-correct-1',
+        'answer-correct-2',
+        'answer-wrong-1',
+        'answer-wrong-2',
+        'conclusion'
+      ];
+      
+      const missingKeys = requiredKeys.filter(key => !(key in structuredJson));
+      if (missingKeys.length > 0) {
+        throw new Error(`Invalid level JSON: missing fields ${missingKeys.join(', ')}`);
+      }
+
+      const responseData = {
+        json: structuredJson,
+        version: 'unknown',
+        size: selectedFile.size,
+        name: selectedFile.name,
+      };
+
+      sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(responseData));
+      setLoadedViaJson(true);
+      setLoadedViaUpload(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to parse JSON level file.');
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
   const validateAndSetFile = (selectedFile: File) => {
     setError(null);
     const isPdf = selectedFile.type === 'application/pdf' || selectedFile.name.toLowerCase().endsWith('.pdf');
     const isImg = selectedFile.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(selectedFile.name);
-    if (!isPdf && !isImg) {
-      setError('Only PDF files and supported images (PNG, JPG, WEBP) are supported.');
+    const isTxt = selectedFile.type === 'text/plain' || selectedFile.name.toLowerCase().endsWith('.txt');
+    if (!isPdf && !isImg && !isTxt) {
+      setError('Only PDF files, TXT files, and supported images (PNG, JPG, WEBP) are supported.');
       return;
     }
     if (selectedFile.size > 15 * 1024 * 1024) {
@@ -117,14 +207,25 @@ export default function Home() {
       formData.append('file', fileToParse);
 
       const isImg = fileToParse.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(fileToParse.name);
-      const response = isImg ? await parseImageAction(formData) : await parsePDFAction(formData);
+      const isTxt = fileToParse.type === 'text/plain' || fileToParse.name.toLowerCase().endsWith('.txt');
+      
+      let response;
+      if (isImg) {
+        response = await parseImageAction(formData);
+      } else if (isTxt) {
+        response = await parseTextAction(formData);
+      } else {
+        response = await parsePDFAction(formData);
+      }
 
       if (response.success && response.data) {
         console.log('Parsed document JSON:', response.data.json);
         sessionStorage.setItem(GENERATED_GAME_STORAGE_KEY, JSON.stringify(response.data));
-        router.push('/game');
+        setLoadedViaUpload(true);
+        setLoadedViaJson(false);
       } else {
-        setError(response.error || `An error occurred while converting the ${isImg ? 'image' : 'PDF'}.`);
+        const fileTypeLabel = isImg ? 'image' : isTxt ? 'TXT' : 'PDF';
+        setError(response.error || `An error occurred while converting the ${fileTypeLabel}.`);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
@@ -199,29 +300,38 @@ export default function Home() {
 
                     <div className="flex flex-col gap-5 items-start justify-center h-[340px] w-full">
                       {[
-                        { name: 'Browse Levels', action: null },
-                        { name: 'Load Level', action: null },
-                        { name: 'Upload file', action: () => fileInputRef.current?.click() },
-                        { name: 'Play', action: null },
-                        { name: 'Settings', action: null },
+                        { name: 'Browse Levels' },
+                        { name: loadedViaJson ? 'Play' : 'Load Level' },
+                        { name: loadedViaUpload ? 'Play' : 'Upload file' },
+                        { name: 'Settings' },
                       ].map((item, index) => {
                         const baseX = (2.828 - Math.pow(Math.abs(2 - index), 1.5)) * 18;
                         const baseRotate = (index - 2) * 6.0;
+                        const isPlay = item.name === 'Play';
+                        const isUpload = item.name === 'Upload file';
+                        const isLoadLevel = item.name === 'Load Level';
+                        const isActive = isPlay || isUpload || isLoadLevel;
 
                         return (
                           <motion.button
-                            key={item.name}
-                            onClick={item.action || undefined}
+                            key={index === 1 ? 'load-play' : (index === 2 ? 'upload-play' : item.name)}
+                            onClick={
+                              index === 1 
+                                ? (loadedViaJson ? () => router.push('/game') : handleLoadLevelClick)
+                                : (index === 2 
+                                  ? (loadedViaUpload ? () => router.push('/game') : handleUploadClick)
+                                  : undefined)
+                            }
                             onMouseEnter={() => setHoveredIndex(index)}
                             onMouseLeave={() => setHoveredIndex(null)}
-                            whileTap={item.action ? { scale: 0.98 } : undefined}
+                            whileTap={isActive ? { scale: 0.98 } : undefined}
                             animate={{
                               scale: hoveredIndex === index ? 1.45 : 1.0,
                               x: hoveredIndex === index ? baseX + 20 : baseX,
                               rotate: baseRotate,
                               paddingTop: hoveredIndex === index ? 12 : 0,
                               paddingBottom: hoveredIndex === index ? 12 : 0,
-                              opacity: hoveredIndex === null ? (item.action ? 1 : 0.4) : (hoveredIndex === index ? 1 : 0.25)
+                              opacity: hoveredIndex === null ? (isActive ? 1 : 0.4) : (hoveredIndex === index ? 1 : 0.25)
                             }}
                             transition={{ type: "spring", stiffness: 350, damping: 20 }}
                             style={{
@@ -229,7 +339,7 @@ export default function Home() {
                               WebkitTextStroke: '1px black',
                               transformOrigin: 'left center'
                             }}
-                            className={`text-left font-black tracking-wide relative text-3xl md:text-4xl ${item.action
+                            className={`text-left font-black tracking-wide relative text-3xl md:text-4xl ${isActive
                                 ? 'text-white cursor-pointer hover:text-sky-300'
                                 : 'text-white cursor-default'
                               }`}
@@ -245,7 +355,14 @@ export default function Home() {
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    accept="application/pdf,image/*"
+                    accept="application/pdf,image/*,text/plain,.txt"
+                    className="hidden"
+                  />
+                  <input
+                    type="file"
+                    ref={jsonInputRef}
+                    onChange={handleJsonFileChange}
+                    accept="application/json,.json"
                     className="hidden"
                   />
                 </motion.div>

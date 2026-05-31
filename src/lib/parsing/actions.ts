@@ -279,6 +279,90 @@ export async function parseImageAction(formData: FormData): Promise<{ success: b
   }
 }
 
+export async function parseTextAction(formData: FormData): Promise<{ success: boolean; data?: PDFParseResult; error?: string }> {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'GEMINI_API_KEY is not defined in the environment. Please add GEMINI_API_KEY=your_key_here to a .env.local file in your root directory.'
+      };
+    }
+
+    const file = formData.get('file') as File;
+    if (!file) {
+      return { success: false, error: 'No file uploaded.' };
+    }
+
+    if (file.type !== 'text/plain' && !file.name.toLowerCase().endsWith('.txt')) {
+      return { success: false, error: 'Uploaded file is not a TXT file.' };
+    }
+
+    // Limit to 15MB
+    if (file.size > 15 * 1024 * 1024) {
+      return { success: false, error: 'File size exceeds 15MB limit.' };
+    }
+
+    const rawText = await file.text();
+
+    if (!rawText.trim()) {
+      return { success: false, error: 'Failed to extract any text from this TXT file.' };
+    }
+
+    // Load the system prompt from prompt.txt resource file
+    const systemPrompt = readFileSync(PDF_PROMPT_PATH, 'utf8');
+
+    // Call Gemini API to transform the text into structured JSON
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `${systemPrompt}
+
+Document Text:
+${rawText}`
+          }]
+        }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API returned status ${response.status}: ${errorText}`);
+    }
+
+    const rawJsonString = await readGeminiText(response);
+
+    // Parse the JSON string from Gemini
+    const structuredJson = JSON.parse(rawJsonString);
+
+    return {
+      success: true,
+      data: {
+        json: structuredJson,
+        version: 'unknown',
+        size: file.size,
+        name: file.name,
+      },
+    };
+  } catch (err: unknown) {
+    console.error('TXT parsing/Gemini error:', err);
+    return {
+      success: false,
+      error: getErrorMessage(err, 'Failed to parse and transform TXT file.'),
+    };
+  }
+}
+
 export async function getLoadingMessagesAction(): Promise<string[]> {
   try {
     const searchPaths = [
